@@ -9,9 +9,7 @@ var b110Obj=[{}];
 
 function run(){
     var inputer=document.getElementById('input_1').value;
-    var sp=inputer.split("\n");//.match(/.{1,97}/g);
-    //console.log(input.length);
-    //console.log(sp);
+    var sp=inputer.split("\n");
     var a100=[];
     var b100=[];
     var b110=[];
@@ -268,13 +266,7 @@ function showTotals(c100, d110, d120, b110){
 
     console.table(ur_total);
     //console.table(b110);
-    /*
-    console.log("Account Name" + " " + "Account Number" + " " + "Account Balance" + " " + "Credit" + " " + "Debit");
 
-    for(let i=0;i<b110.length;i++){
-        console.table(b110[i].acctname + " " + parseInt(b110[i].acctnumber) + " " + parseFloat(b110[i].openbalance) + " " + parseFloat(b110[i].credit) + " " + parseFloat(b110[i].debit));
-    }
-*/
 
     //Analyze report dicrepencies
     
@@ -346,123 +338,6 @@ function showTotals(c100, d110, d120, b110){
             console.log(urObj[i]);
         }
     }
-
-    //Show Totals
-    /*
-    for(let i=0;i<=11;i++){
-        total[i]=0; 
-        total_d110[i]=0;
-        total_d120[i]=0;
-    } 
-
-    for(let i=1;i<d120.length;i++){
-        let type=d120[i].doctype;
-        if(type==410){
-            total_d120[0]+=parseFloat(d120[i].amount);
-        }
-    }
-    */
-/*    
-    for(let i=1;i<c100.length;i++){ //copy to previous loop of c100
-        //console.log(i + " " + c100[i].totalbeforediscount)
-        let type=c100[i].doctype;
-        switch(type){
-            case '100':
-                total[0]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '305':
-                total[1]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '320':
-                total[2]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '330':
-                total[3]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '400':
-                total[4]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '410':
-                total[5]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '500':
-                total[6]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '700':
-                total[7]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '710':
-                total[8]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '810':
-                total[9]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '820':
-                total[10]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '830':
-                total[11]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '840':
-                total[12]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '900':
-                total[13]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-            case '910':
-                total[14]+=parseFloat(c100[i].totalbeforediscount);
-                break;
-        }    
-    }
-    for(let i=1;i<d110.length;i++){ //copy to previous loop of d110
-        //console.log(i + " " + d110[i].totalbeforediscount)
-        let type=d110[i].doctype;
-        if(type==100){
-            total_d110[0]+=parseFloat(d110[i].amount);
-        }else if(type==305){
-            total_d110[1]+=parseFloat(d110[i].amount);
-        }else if(type==330){
-            total_d110[2]+=parseFloat(d110[i].amount);
-        }else if(type==500){
-            total_d110[3]+=parseFloat(d110[i].amount);
-        }else if(type==700){
-            total_d110[4]+=parseFloat(d110[i].amount);
-        }else if(type==710){
-            total_d110[5]+=parseFloat(d110[i].amount);
-        }else if(type==810){
-            total_d110[6]+=parseFloat(d110[i].amount);
-        }else if(type==820){
-            total_d110[7]+=parseFloat(d110[i].amount);
-        }else if(type==830){
-            total_d110[8]+=parseFloat(d110[i].amount);
-        }else if(type==840){
-            total_d110[9]+=parseFloat(d110[i].amount);
-        }else if(type==900){
-            total_d110[10]+=parseFloat(d110[i].amount);
-        }else if(type==910){
-            total_d110[11]+=parseFloat(d110[i].amount);
-        }        
-    }
-
-    for(let i=0;i<=11;i++){
-        total[i]/=100;  
-        total_d110[i]/=100;
-        total_d120[i]/=100;
-    }  
-    console.log(total_d120);
-    */
-/*
-   for(let i=0;i<total.length;i++){
-       var ur_total_obj={};
-       ur_total_obj.title=titles[i];
-       ur_total_obj.c100Total=total[i];
-       ur_total_obj.d110Total=total_d110[i];
-       ur_total_obj.discrepency=(total_d110[i]-total[i])
-       ur_total.push(ur_total_obj);
-       //console.log("C100 total " + titles[i] + ": " + total[i]+ " D110 total " + titles[i] + ": " + total_d110[i]);
-   }
-   console.table(ur_total);
-*/
     return total;
 }
 
