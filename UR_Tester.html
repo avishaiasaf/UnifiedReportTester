@@ -42,26 +42,13 @@ function run(){
                 d120.push(sp[i]);
                 break;
         }
-        /*if(current=='A100'){
-            a100.push(sp[i])
-        }else if(current=='B100'){
-            b100.push(sp[i])
-        }else if(current=='B110'){
-            b110.push(sp[i]);
-        }else if(current=='C100'){
-            c100.push(sp[i]);
-        }else if(current=='D110'){
-            d110.push(sp[i]);
-        }else if(current=='D120'){
-            d120.push(sp[i]);
-        }*/    
     }
 
     var C100=processC100(c100);
     var D110=processD110(d110);
     var D120=processD120(d120);
     var B110=processB110(b110);
-    var total_c=showTotals(C100, D110, D120);
+    var total_c=showTotals(C100, D110, D120, B110);
 
 }
 
@@ -137,7 +124,7 @@ function processD110(d110){
         d110o.space=d110[i].substr(318,21);
         d110Obj.push(d110o);
     }
-    console.log(d110Obj);
+    //console.log(d110Obj);
     return d110Obj;
 }
 
@@ -167,7 +154,7 @@ function processD120(d120){
         d120o.space=d120[i].substr(162,60);
         d120Obj.push(d120o);
     }
-    console.log(d120Obj);
+    //console.log(d120Obj);
     return d120Obj;
 }
 
@@ -178,7 +165,7 @@ function processB110(b110){
         b110o.code=b110[i].substr(0,4);
         b110o.fileno=b110[i].substr(4,9);
         b110o.empno=b110[i].substr(13,9);
-        b110o.acctnumber=b110[i].substr(22,15);
+        b110o.acctnumber=parseInt(b110[i].substr(22,15));
         b110o.acctname=b110[i].substr(37,50);
         b110o.bscode=b110[i].substr(87,15);
         b110o.bsdescription=b110[i].substr(102,30);
@@ -189,9 +176,9 @@ function processB110(b110){
         b110o.clientcountry=b110[i].substr(230,30);
         b110o.countrycode=b110[i].substr(260,2);
         b110o.summaryacct=b110[i].substr(262,15);
-        b110o.openbalance=b110[i].substr(277,15);
-        b110o.debit=b110[i].substr(292,15);
-        b110o.credit=b110[i].substr(307,15);
+        b110o.openbalance=parseFloat(b110[i].substr(277,15));
+        b110o.debit=parseFloat(b110[i].substr(292,15));
+        b110o.credit=parseFloat(b110[i].substr(307,15));
         b110o.accountingcode=b110[i].substr(322,4);
         b110o.entitytaxid=b110[i].substr(326,9);
         b110o.branchid=b110[i].substr(335,7);
@@ -200,12 +187,14 @@ function processB110(b110){
         b110o.space=b110[i].substr(360,16);
         b110Obj.push(b110o);
     }
-    console.log(b110Obj);
+    //console.log(b110Obj);
     return b110Obj;
 }
 
+//for(let i=0;i<d110Obj.length;i++)   document.writeln(d110Obj[i].id);
 
-function showTotals(c100, d110, d120){
+
+function showTotals(c100, d110, d120, b110){
 
     var titleConvert={
         100: 'salesorder',
@@ -224,8 +213,9 @@ function showTotals(c100, d110, d120){
         900: 'assemblybuild',
         910: 'assemblyunbuild',
     };
-    var titles=[100,305,330,500,700,710,810,820,830,840,900,910]
+    var titles=[100,305,320,330,400,410,500,700,710,810,820,830,840,900,910]
     var total=[];
+    var ur_total=[{}];
     var total_d110=[];
     var total_d120=[];
     var internalid=[];
@@ -236,10 +226,58 @@ function showTotals(c100, d110, d120){
     var d110_internalid=new Set();
     var d120_internalid=new Set();
     var ur_internalid=new Set();
-   /* for(let i=0;i<d110.length;i++){
-        
-    }*/
 
+    //Initiate ur_total
+    for(let i=0;i<titles.length;i++){
+        let ur_total_obj={};
+        ur_total_obj.title=titles[i];
+        ur_total_obj.totalC100=0;
+        ur_total_obj.totalD110=0;
+        ur_total_obj.totalD120=0;
+        ur_total_obj.discrepency=0;
+        ur_total.push(ur_total_obj);
+    }
+    //console.table(ur_total);
+
+    var docLen=c100.length>d110.length ? c100.length : (d110.length>d120.length ? d110.length : d120.length);
+    console.log(docLen);
+
+    for(let i=0;i<docLen;i++){
+        for(let j=0;j<ur_total.length;j++){
+            if(c100.length>i){
+                let type_1=c100[i].doctype;
+                if(type_1==ur_total[j].title){
+                    ur_total[j].totalC100+=parseFloat(c100[i].totalbeforediscount)/100;
+                    //console.log(ur_total[j].totalC100)
+                }
+            }  
+            if(d110.length>i){
+                let type_2=d110[i].doctype;
+                if(type_2==ur_total[j].title){
+                    ur_total[j].totalD110+=parseFloat(d110[i].amount)/100;
+                }
+            }  
+            if(d120.length>i){
+                let type_3=d120[i].doctype;
+                if(type_3==ur_total[j].title){
+                    ur_total[j].totalD120+=parseFloat(d110[i].amount)/100;
+                }
+            }  
+        }
+    }
+
+    console.table(ur_total);
+    //console.table(b110);
+    /*
+    console.log("Account Name" + " " + "Account Number" + " " + "Account Balance" + " " + "Credit" + " " + "Debit");
+
+    for(let i=0;i<b110.length;i++){
+        console.table(b110[i].acctname + " " + parseInt(b110[i].acctnumber) + " " + parseFloat(b110[i].openbalance) + " " + parseFloat(b110[i].credit) + " " + parseFloat(b110[i].debit));
+    }
+*/
+
+    //Analyze report dicrepencies
+    
     for(let i=0;i<d120.length;i++){
         totalPerId_d120[i]=0;
         d120_internalid.add(d120[i].id);
@@ -275,19 +313,19 @@ function showTotals(c100, d110, d120){
         ur_Obj.d120Num=0;
         for(let j=0;j<c100.length;j++){
             if(parseInt(c100[j].id)==parseInt(ur_internalid_arr[i])){
-                ur_Obj.c100Amount+=parseFloat(c100[j].totalbeforediscount);
+                ur_Obj.c100Amount+=parseFloat(c100[j].totalbeforediscount)/100;
                 ur_Obj.c100Num++;
             }
         }
         for(let j=0;j<d110.length;j++){
             if(parseInt(d110[j].id)==parseInt(ur_internalid_arr[i])){
-                ur_Obj.d110Amount+=parseFloat(d110[j].amount);
+                ur_Obj.d110Amount+=parseFloat(d110[j].amount)/100;
                 ur_Obj.d110Num++;
             }
         }
         for(let j=0;j<d120.length;j++){
             if(parseInt(d120[j].id)==parseInt(ur_internalid_arr[i])){
-                ur_Obj.d120Amount+=parseFloat(d120[j].amount);
+                ur_Obj.d120Amount+=parseFloat(d120[j].amount)/100;
                 ur_Obj.d120Num++;
             }
         }
@@ -301,58 +339,16 @@ function showTotals(c100, d110, d120){
     //console.log(urObj);
 
     for(let i=1;i<urObj.length;i++){
-        if(Math.abs(urObj[i].c100Amount-urObj[i].d110Amount-urObj[i].d120Amount)>5){
+        let c=urObj[i].c100Amount;
+        let d1=urObj[i].d110Amount;
+        let d2=urObj[i].d120Amount;
+        if(Math.abs(c-d1-d2)>5 && c!=d1 && c!=d2){
             console.log(urObj[i]);
         }
     }
-/*
-    for(let i=0;i<d110_internalid.size;i++){
-        for(let j=0;j<d110.length;j++){
-            if(d110_internalid_arr[i]==d110[j].id){
-                totalPerId_d110+=parseFloat(d110[j].amount);
-                internalid_d110[i]=parseInt(d110[j].id);
-            }
-        }
-    }
-    console.log(internalid_d110);
 
-    for(let i=0;i<c100.length;i++){
-        internalid.push(parseInt(c100[i].id));
-        totalPerId.push(parseFloat(c100[i].totalbeforediscount));       
-    }*/
-/*
-    
-    for(let j=0;j<c100.length;j++){
-        for(let i=0;i<d110.length;i++){
-            if(parseInt(d110[i].id)==parseInt(c100[j].id)){ 
-                totalPerId_d110[j]+=parseFloat(d110[i].amount);
-                internalid_d110[i]=d110[i].id;
-            }
-        }
-    }
-*/
- /*   for(let i=0;i<c100.length;i++){
-        //console.log(internalid[i] + " D110: " + totalPerId_d110[i] + " C100: " + totalPerId[i]);
-        if(Math.abs(totalPerId_d110[i]-totalPerId[i])>5){
-            console.log(internalid[i] + " D110: " + totalPerId_d110[i] + " C100: " + totalPerId[i]);
-        }
-    }
-
-        //show d110 without c100
-        
-    for(let i=0;i<totalPerId_d110.length;i++){
-        //console.log(internalid[i] + " D110: " + totalPerId_d110[i] + " C100: " + totalPerId[i]);
-        for(let j=0;j<totalPerId.length;j++){
-            if(/*totalPerId_d110[i].id*//*internalid_d110[i]==parseInt(internalid[j])){
-                if(Math.abs(totalPerId_d110[i]-totalPerId[j])>5){
-                    console.log(internalid[i] + " D110: " + totalPerId_d110[i] + " C100: " + totalPerId[j]);
-                }
-            }
-        }
-        
-    }
-*/
     //Show Totals
+    /*
     for(let i=0;i<=11;i++){
         total[i]=0; 
         total_d110[i]=0;
@@ -365,35 +361,58 @@ function showTotals(c100, d110, d120){
             total_d120[0]+=parseFloat(d120[i].amount);
         }
     }
-
+    */
+/*    
     for(let i=1;i<c100.length;i++){ //copy to previous loop of c100
         //console.log(i + " " + c100[i].totalbeforediscount)
         let type=c100[i].doctype;
-        if(type==100){
-            total[0]+=parseFloat(c100[i].totalbeforediscount);
-        }else if(type==305){
-            total[1]+=parseFloat(c100[i].totalbeforediscount);
-        }else if(type==330){
-            total[2]+=parseFloat(c100[i].totalbeforediscount);
-        }else if(type==500){
-            total[3]+=parseFloat(c100[i].totalbeforediscount);
-        }else if(type==700){
-            total[4]+=parseFloat(c100[i].totalbeforediscount);
-        }else if(type==710){
-            total[5]+=parseFloat(c100[i].totalbeforediscount);
-        }else if(type==810){
-            total[6]+=parseFloat(c100[i].totalbeforediscount);
-        }else if(type==820){
-            total[7]+=parseFloat(c100[i].totalbeforediscount);
-        }else if(type==830){
-            total[8]+=parseFloat(c100[i].totalbeforediscount);
-        }else if(type==840){
-            total[9]+=parseFloat(c100[i].totalbeforediscount);
-        }else if(type==900){
-            total[10]+=parseFloat(c100[i].totalbeforediscount);
-        }else if(type==910){
-            total[11]+=parseFloat(c100[i].totalbeforediscount);
-        }        
+        switch(type){
+            case '100':
+                total[0]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '305':
+                total[1]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '320':
+                total[2]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '330':
+                total[3]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '400':
+                total[4]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '410':
+                total[5]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '500':
+                total[6]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '700':
+                total[7]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '710':
+                total[8]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '810':
+                total[9]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '820':
+                total[10]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '830':
+                total[11]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '840':
+                total[12]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '900':
+                total[13]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+            case '910':
+                total[14]+=parseFloat(c100[i].totalbeforediscount);
+                break;
+        }    
     }
     for(let i=1;i<d110.length;i++){ //copy to previous loop of d110
         //console.log(i + " " + d110[i].totalbeforediscount)
@@ -424,32 +443,35 @@ function showTotals(c100, d110, d120){
             total_d110[11]+=parseFloat(d110[i].amount);
         }        
     }
+
     for(let i=0;i<=11;i++){
         total[i]/=100;  
         total_d110[i]/=100;
         total_d120[i]/=100;
     }  
     console.log(total_d120);
-
+    */
+/*
    for(let i=0;i<total.length;i++){
-       console.log("C100 total " + titles[i] + ": " + total[i]+ " D110 total " + titles[i] + ": " + total_d110[i]);
+       var ur_total_obj={};
+       ur_total_obj.title=titles[i];
+       ur_total_obj.c100Total=total[i];
+       ur_total_obj.d110Total=total_d110[i];
+       ur_total_obj.discrepency=(total_d110[i]-total[i])
+       ur_total.push(ur_total_obj);
+       //console.log("C100 total " + titles[i] + ": " + total[i]+ " D110 total " + titles[i] + ": " + total_d110[i]);
    }
-
+   console.table(ur_total);
+*/
     return total;
 }
 
-function print(record){
-    console.log("id: " + record.id);
-}
 
-function test(){
-    console.log('test');
-}
 
             </script>
     </head>
     <body>
-        <textarea id='input_1' rows="60" cols="150"></textarea>
+        <textarea id='input_1' rows="30" cols="100"></textarea>
         <button id='runner' onclick="run()">Run</button>
     </body>
 </html>
