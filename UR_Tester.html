@@ -7,10 +7,44 @@ var d110Obj=[{}];
 var d120Obj=[{}];
 var b110Obj=[{}];
 var b100Obj=[{}];
+var b100Flag=false;
+var b110Flag=false;
+var c100Flag=false;
+var d110Flag=false;
+var d120Flag=false;
+var m100Flag=false;
+var printFlag=false;
+
+
+
+function generalToString(){
+    var str="\n-----------\n";
+    for(let [key,value] of Object.entries(this)){
+        if(key!='toString')     str+=key + ": " + value + "\t";
+    }
+    return str;
+}
+         
+
 
 function run(){
     var inputer=document.getElementById('input_1').value;
     var sp=inputer.split("\n");
+    var output_1=document.getElementById('output');
+    b100Flag=document.getElementById('show_b100').checked;
+    b110Flag=document.getElementById('show_b110').checked;
+    c100Flag=document.getElementById('show_c100').checked;
+    d110Flag=document.getElementById('show_d110').checked;
+    d120Flag=document.getElementById('show_d120').checked;
+    m100Flag=document.getElementById('show_m100').checked;
+    printFlag=document.getElementById('print_type').checked;
+    printLine("Show B100: " + b100Flag);
+    printLine("Show B110: " + b110Flag);
+    printLine("Show C100: " + c100Flag);
+    printLine("Show D110: " + d110Flag);
+    printLine("Show D120: " + d120Flag);
+    printLine("Show M100: " + m100Flag);
+    printLine("Print to screen " + printFlag);
     var a100=[];
     var b100=[];
     var b110=[];
@@ -18,11 +52,11 @@ function run(){
     var d110=[];
     var d120=[];
 
-    console.log('Total records in file:');
+    printLine('Total records in file:');
 
     for(var i=0;i<sp.length;i++){
         let current=sp[i].substring(0,4);
-        console.log(sp[i].substring(0,4))
+        //printLine(sp[i].substring(0,4))
         switch(current){
             case 'A100':
                 a100.push(sp[i]);
@@ -46,22 +80,24 @@ function run(){
     }
 
     var C100=processC100(c100);
+    //printLine(C100);
     var D110=processD110(d110);
     var D120=processD120(d120);
     var B110=processB110(b110);
     var B100=processB100(b100);
-    var total_c=showTotals(C100, D110, D120, B110);
+    var total_c=showTotals(C100, D110, D120, B110, B100);
 
 }
 
 function processC100(c100){
     c100Obj.length=0;
     for(let i=0;i<c100.length;i++){
-        c100o={};                   
+        c100o={};  
+        c100o.toString=generalToString;                  
         c100o.code=c100[i].substring(0,4);
         c100o.fileno=c100[i].substring(4,13);
         c100o.empno=c100[i].substring(13,22);
-        c100o.doctype=c100[i].substring(22,25);
+        c100o.doctype=c100[i].substr(22,3);
         c100o.docnum=c100[i].substring(25,45);
         c100o.docdate=c100[i].substring(45,53);
         c100o.dochour=c100[i].substring(53,57);
@@ -92,19 +128,20 @@ function processC100(c100){
         c100o.spaces_3=c100[i].substr(431,13);
         c100Obj.push(c100o);
     }
-    //console.log(c100Obj);
+    //printLine(c100Obj);
     return c100Obj;
 }
 
 function processD110(d110){
     d110Obj.length=0;
     for(let i=0;i<d110.length;i++){
-        d110o={};                   
+        var d110o={};
+        d110o.toString=generalToString;           
         d110o.code=d110[i].substr(0,4);
-        d110o.fileno=d110[i].substr(4,9);
-        d110o.empno=d110[i].substr(13,9);
-        d110o.doctype=d110[i].substr(22,3);
-        d110o.docnum=d110[i].substr(25,20);
+        d110o.fileno=parseInt(d110[i].substr(4,9));
+        d110o.empno=parseInt(d110[i].substr(13,9));
+        d110o.doctype=parseInt(d110[i].substr(22,3));
+        d110o.docnum=parseInt(d110[i].substr(25,20));
         d110o.doclinenum=d110[i].substr(45,4);
         d110o.docmaintype=d110[i].substr(49,3);
         d110o.docmainnum=d110[i].substr(52,10);
@@ -124,16 +161,19 @@ function processD110(d110){
         d110o.id=d110[i].substr(304,7);
         d110o.branchid=d110[i].substr(311,7);
         d110o.space=d110[i].substr(318,21);
+        d110o.rateQuantityDis=Math.abs(((parseFloat(d110o.rate)/100)*(parseFloat(d110o.quantity)/10000))-(parseFloat(d110o.amount)/100))>1?true:false;
+        d110o.rqadetail=(parseFloat(d110o.rate)/100)+ "*" + (parseFloat(d110o.quantity)/10000) + "=" + (parseFloat(d110o.amount)/100);
         d110Obj.push(d110o);
     }
-    //console.log(d110Obj);
+    //printLine(d110Obj);
     return d110Obj;
 }
 
 function processD120(d120){
     d120Obj.length=0;
     for(let i=0;i<d120.length;i++){
-        d120o={};                   
+        d120o={};    
+        d120o.toString=generalToString;               
         d120o.code=d120[i].substr(0,4);
         d120o.fileno=d120[i].substr(4,9);
         d120o.empno=d120[i].substr(13,9);
@@ -156,14 +196,15 @@ function processD120(d120){
         d120o.space=d120[i].substr(162,60);
         d120Obj.push(d120o);
     }
-    //console.log(d120Obj);
+    //printLine(d120Obj);
     return d120Obj;
 }
 
 function processB110(b110){
     b110Obj.length=0;
     for(let i=0;i<b110.length;i++){
-        b110o={};                   
+        b110o={};
+        b110o.toString=generalToString;                   
         b110o.code=b110[i].substr(0,4);
         b110o.fileno=b110[i].substr(4,9);
         b110o.empno=b110[i].substr(13,9);
@@ -189,14 +230,15 @@ function processB110(b110){
         b110o.space=b110[i].substr(360,16);
         b110Obj.push(b110o);
     }
-    //console.log(b110Obj);
+    //printLine(b110Obj);
     return b110Obj;
 }
 
 function processB100(b100){
     b100Obj.length=0;
     for(let i=0;i<b100.length;i++){
-        b100o={};                   
+        b100o={}; 
+        b100o.toString=generalToString;                  
         b100o.code=b100[i].substr(0,4);
         b100o.fileno=b100[i].substr(4,9);
         b100o.empno=b100[i].substr(13,9);
@@ -226,14 +268,12 @@ function processB100(b100){
         b100o.space_5=b100[i].substr(292,25);
         b100Obj.push(b100o);
     }
-    //console.log(b100Obj);
+    //printLine(b100Obj);
     return b100Obj;
 }
 
-//for(let i=0;i<d110Obj.length;i++)   document.writeln(d110Obj[i].id);
 
-
-function showTotals(c100, d110, d120, b110){
+function showTotals(c100, d110, d120, b110, b100){
 
     var titleConvert={
         100: 'salesorder',
@@ -255,6 +295,7 @@ function showTotals(c100, d110, d120, b110){
     var titles=[100,305,320,330,400,410,500,700,710,810,820,830,840,900,910]
     var total=[];
     var ur_total=[{}];
+    ur_total.toString=generalToString;
     var total_d110=[];
     var total_d120=[];
     var internalid=[];
@@ -269,6 +310,7 @@ function showTotals(c100, d110, d120, b110){
     //Initiate ur_total
     for(let i=0;i<titles.length;i++){
         let ur_total_obj={};
+        ur_total_obj.toString=generalToString;
         ur_total_obj.title=titles[i];
         ur_total_obj.totalC100=0;
         ur_total_obj.totalD110=0;
@@ -276,10 +318,22 @@ function showTotals(c100, d110, d120, b110){
         ur_total_obj.discrepency=0;
         ur_total.push(ur_total_obj);
     }
-    //console.table(ur_total);
+    //printLine(ur_total);
 
+    //Find specific D110 line by id
+    var findId=Array.from(document.getElementById('show_ids').value.split(','));
+    //var findId=23030;
+    //printLine(findId);
+        for(let i=0;i<d110.length;i++){
+            if(findId.indexOf(parseInt(d110[i].id).toString())>0){
+                printLine(d110[i]);
+                //printLine+=d110[i];
+            }               
+        }
+    
+        //printLine+=d110[12];
     var docLen=c100.length>d110.length ? c100.length : (d110.length>d120.length ? d110.length : d120.length);
-    //console.log(docLen);
+    //printLine(docLen);
 
     for(let i=0;i<docLen;i++){
         for(let j=0;j<ur_total.length;j++){
@@ -287,7 +341,7 @@ function showTotals(c100, d110, d120, b110){
                 let type_1=c100[i].doctype;
                 if(type_1==ur_total[j].title){
                     ur_total[j].totalC100+=parseFloat(c100[i].totalbeforediscount)/100;
-                    //console.log(ur_total[j].totalC100)
+                    //printLine(ur_total[j].totalC100)
                 }
             }  
             if(d110.length>i){
@@ -313,13 +367,23 @@ function showTotals(c100, d110, d120, b110){
         }
     }
 
-    console.log('Summary totals:')
-    console.table(ur_total);
+    //printLine('Summary totals:')
+    //printLine(ur_total);
+    print(true, ur_total, 'Summary totals:');
 
-    console.log('B110 Account Display:')
-    console.table(b110);
-
-
+    //Show report records based on flags
+    //printLine(b100Flag);
+    print(b100Flag, b100, 'B100 Records: ');
+    print(b110Flag, b110, 'B110 Records: ');
+    print(c100Flag, c100, 'C100 Records: ');
+    print(d110Flag, d110, 'D110 Records: ');
+    print(d120Flag, d120, 'D120 Records: ');
+/*
+    if(b100Flag){
+        printLine('B110 Account Display:')
+        printLine(b110);
+    }
+*/
     //Analyze report dicrepencies
     
     for(let i=0;i<d120.length;i++){
@@ -342,15 +406,15 @@ function showTotals(c100, d110, d120, b110){
     var d120_internalid_arr=Array.from(d120_internalid);
     var ur_internalid_arr=Array.from(ur_internalid);
     var urObj=[{}];
+    urObj.toString=generalToString;
 
     try{
         for(let i=0;i<ur_internalid_arr.length;i++){
         let ur_Obj={};
+        ur_Obj.toString=generalToString;
         ur_Obj.c100Amount=0;
         ur_Obj.d110Amount=0;
         ur_Obj.d120Amount=0;
-        //ur_Obj.docType=titleConvert[c100[i].doctype];
-        //typeof(titleConvert[c100[i].doctype])!=undefined?ur_Obj.docType=titleConvert[c100[i].doctype]:ur_Obj.docType=undefined;
         ur_Obj.internalid=ur_internalid_arr[i];
         ur_Obj.c100Num=0;
         ur_Obj.d110Num=0;
@@ -359,44 +423,56 @@ function showTotals(c100, d110, d120, b110){
             if(parseInt(c100[j].id)==parseInt(ur_internalid_arr[i])){
                 ur_Obj.c100Amount+=parseFloat(c100[j].totalbeforediscount)/100;
                 ur_Obj.c100Num++;
+                ///ur_Obj.docType=titleConvert[c100[i].doctype];
+                typeof(titleConvert[c100[j].doctype])!=undefined?ur_Obj.docType=titleConvert[c100[j].doctype]:ur_Obj.docType=undefined;
             }
         }
         for(let j=0;j<d110.length;j++){
             if(parseInt(d110[j].id)==parseInt(ur_internalid_arr[i])){
                 ur_Obj.d110Amount+=parseFloat(d110[j].amount)/100;
                 ur_Obj.d110Num++;
+                ur_Obj.d110rateQuantityDis=d110[j].rateQuantityDis;
+                ur_Obj.d110rqadetail=d110[j].rqadetail;
+                //ur_Obj.docType=titleConvert[d110[i].doctype];
+                typeof(titleConvert[d110[j].doctype])!=undefined?ur_Obj.docType=titleConvert[d110[j].doctype]:ur_Obj.docType=undefined;
             }
         }
         for(let j=0;j<d120.length;j++){
             if(parseInt(d120[j].id)==parseInt(ur_internalid_arr[i])){
                 ur_Obj.d120Amount+=parseFloat(d120[j].amount)/100;
                 ur_Obj.d120Num++;
+                //ur_Obj.docType=titleConvert[d120[i].doctype];
+                typeof(titleConvert[d120[j].doctype])!=undefined?ur_Obj.docType=titleConvert[d120[j].doctype]:ur_Obj.docType=undefined;
             }
         }
-        if(ur_Obj.c100Num==0)   ur_Obj.exceptionC100=true;
+        if(ur_Obj.c100Num==0 && (ur_Obj.d110Num>0 || ur_Obj.d120Num>0))   ur_Obj.exceptionC100=true;
+        if(ur_Obj.d110Num==0 && ur_Obj.d120Num==0 && ur_Obj.c100Num>0)   ur_Obj.exceptionD110=true;
         urObj.push(ur_Obj);
         }  
     }catch(e){
-        console.log(e);
+        printLine(e);
     }
     
 
-    //console.table(urObj);
+    //printLine(urObj);
 
     //Show summary discrepencies C100 D110 and D120
     var urObj_result=[{}];
+    urObj_result.toString=generalToString;
+
     for(let i=1;i<urObj.length;i++){
         let c=urObj[i].c100Amount;
         let d1=urObj[i].d110Amount;
         let d2=urObj[i].d120Amount;
         if(Math.abs(c-d1-d2)>5 && c!=d1 && c!=d2){
             urObj_result.push(urObj[i]);
-            //console.log(urObj[i]);
+            //printLine(urObj[i]);
         }
     }
 
-    console.log('Transactions with discrepency between D110 and C100:');
-    console.table(urObj_result);
+    //printLine('Transactions with discrepency between D110 and C100:');
+    //printLine(urObj_result);
+    print(false, urObj_result, 'Transactions with discrepency between D110 and C100:');
     
     //Restart results object
     urObj_result.length=0;
@@ -405,16 +481,66 @@ function showTotals(c100, d110, d120, b110){
     for(let i=1;i<urObj.length;i++){
         if(urObj[i].exceptionC100)  urObj_result.push(urObj[i]);
     }
-    console.log('D110 without C100:');
-    console.table(urObj_result);
+   // printLine('D110/D120 without C100:');
+   // printLine(urObj_result);
+    print(true, urObj_result, 'D110/D120 without C100:');
+
+    urObj_result.length=0;
+
+    //Show C100 lines without D110
+    for(let i=1;i<urObj.length;i++){
+        if(urObj[i].exceptionD110)  urObj_result.push(urObj[i]);
+    }
+    //printLine('C100 without D110:');
+    //printLine(urObj_result);
+    print(true, urObj_result, 'C100 without D110:');
+
+    urObj_result.length=0;
+
+    //Show D110 with rate*quantity !=Amount
+    for(let i=1;i<d110.length;i++){
+        if(d110[i].rateQuantityDis){
+            let tmp={};
+            tmp.id=parseInt(d110[i].id);
+            tmp.detail=d110[i].rqadetail;            
+            urObj_result.push(tmp);
+        }  
+    }
+    //printLine('D110 Discrepancy between Rate*Quantity to Amount:');
+    //printLine(urObj_result);
+    print(true, urObj_result, 'D110 Discrepancy between Rate*Quantity to Amount:');
 
     return total;
+}
+
+function print(flag, record, name){
+    if(flag){
+        //printLine(name + ' Account Display:')
+       // printLine(record);
+        printLine(name);
+        printLine(record);
+    }
+}
+
+function printLine(line){
+    if(printFlag)   document.getElementById('output').value+=line.toString() + '\n';
+    else typeof(line)=='string' ? console.log(line) : console.table(line);
 }
 
             </script>
     </head>
     <body>
-        <textarea id='input_1' rows="30" cols="100"></textarea>
-        <button id='runner' onclick="run()">Run</button>
+        <textarea id='input_1' rows="30" cols="130"></textarea><br /><br />
+        <button id='runner' onclick="run()">Analyze</button><br /><br />       
+        <label><b>Advanced Settings</b></label><br /><br />
+        <input type='checkbox' id='show_b100'><label for='show_b100'>Show B100 Records</label><br />
+        <input type='checkbox' id='show_b110'><label for='show_b110'>Show B110 Records</label><br />
+        <input type='checkbox' id='show_c100'><label for='show_c100'>Show C100 Records</label><br />
+        <input type='checkbox' id='show_d110'><label for='show_d110'>Show D110 Records</label><br />
+        <input type='checkbox' id='show_d120'><label for='show_d120'>Show D120 Records</label><br />
+        <input type='checkbox' id='show_m100'><label for='show_m100'>Show M100 Records</label><br /> 
+        <input type='checkbox' id='print_type'><label for='print_type'>Print to screen</label><br />
+        <label for='show_ids'>Show Specific Records(,)</label>&nbsp;<input type='text' id='show_ids'><br /><br /> 
+        <textarea id='output' rows="30" cols="130"></textarea><br /><br />
     </body>
 </html>
