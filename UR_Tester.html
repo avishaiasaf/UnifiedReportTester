@@ -14,7 +14,14 @@ var d110Flag=false;
 var d120Flag=false;
 var m100Flag=false;
 var printFlag=false;
+var bkmvdata_input='';
+var ini_input='';
 
+//
+
+
+
+//
 
 
 function generalToString(){
@@ -22,13 +29,121 @@ function generalToString(){
     for(let [key,value] of Object.entries(this)){
         if(key!='toString')     str+=key + ": " + value + "\t";
     }
+    str+='\n';
     return str;
 }
          
+function restart(){
+    document.getElementById('grossamt_error').checked=false;
+    document.getElementById('rate_quantity_error').checked=false;
+    document.getElementById('c100_no_d110_error').checked=false;
+    document.getElementById('d110_no_c100_error').checked=false;
+    document.getElementById('summary_error').checked=false;
+}
 
+function loadFile(){
+    var bkmvdata_file = document.getElementById("bkmvdata").files[0];
+    //var bkmvdata_element = document.getElementById("bkmvdata_data");
+    var ini_file = document.getElementById("ini").files[0];
+    //var ini_element = document.getElementById("ini_data");
+    loader(bkmvdata_file, 'bkmvdata');  //bkmvdata_element);
+    loader(ini_file, 'ini');    //ini_element);
+    setTimeout(run,500);
+}
+
+function loader(file, element){
+    var reader = new FileReader();
+    reader.onload = function (e) {
+        //element.value = e.target.result;
+        element=='ini'?ini_input=e.target.result:bkmvdata_input=e.target.result;
+        console.log(element);
+    };
+    reader.readAsText(file);
+}
+
+function processIni(){
+    var input=ini_input.split('\n');  //document.getElementById('ini_data').value.split('\n');
+    var totalRecords={
+        b100:0,
+        b110:0,
+        c100:0,
+        d110:0,
+        d120:0,
+    };
+    totalRecords.toString=generalToString;
+    var a100Obj={};
+    a100Obj.toString=generalToString;
+    for(let i=0;i<input.length;i++){
+        let current=input[i].substring(0,4);
+        //printLine(sp[i].substring(0,4))
+        switch(current){
+            case 'A000':
+                a100Obj=processHeader(input[i]);
+                break;
+            case 'B100':
+                totalRecords.b100=parseInt(input[i].substr(4,15));
+                break;
+            case 'B110':
+                totalRecords.b110=parseInt(input[i].substr(4,15));
+                break;
+            case 'C100':
+                totalRecords.c100=parseInt(input[i].substr(4,15));
+                break;
+            case 'D110':
+                totalRecords.d110=parseInt(input[i].substr(4,15));
+                break;
+            case 'D120':
+                totalRecords.d120=parseInt(input[i].substr(4,15));
+                break;
+        }
+    }
+
+    print(true, a100Obj, 'INI Header: ');
+    print(true, totalRecords, 'Records in file: ');
+
+    function processHeader(obj){
+        var tmp={};
+        tmp.toString=generalToString;
+        tmp.space=obj.substr(4,5);
+        tmp.totalRecords=obj.substr(9,15);
+        tmp.empNumber=obj.substr(24,9);
+        tmp.indentifier=obj.substr(34,15);
+        tmp.systemConst=obj.substr(48,8);
+        tmp.softwareId=obj.substr(456,8);
+        tmp.softwareName=obj.substr(64,20);
+        tmp.softwareVersion=obj.substr(84,20);
+        tmp.softwareOwnerId=obj.substr(104,9);
+        tmp.softwareOwnerName=obj.substr(113,20);
+        tmp.softwareType=obj.substr(133,1);
+        tmp.fileSaveDirectory=obj.substr(134,50);
+        tmp.softwareBookkeeping=obj.substr(184,1);
+        tmp.requiredAccounting=obj.substr(185,1);
+        tmp.companyNumber=obj.substr(186,9);
+        tmp.companyWhNumber=obj.substr(195,9);
+        tmp.space_1=obj.substr(204,10);
+        tmp.companyName=obj.substr(214,50);
+        tmp.address=obj.substr(264,50);
+        tmp.addressNum=obj.substr(314,10);
+        tmp.addressCity=obj.substr(324,30);
+        tmp.zip=obj.substr(354,8);
+        tmp.taxYear=obj.substr(362,4);
+        tmp.startDate=obj.substr(366,8);
+        tmp.endDate=obj.substr(374,8);
+        tmp.dateGenerated=obj.substr(382,8);
+        tmp.hourGenerated=obj.substr(390,4);
+        tmp.Language=obj.substr(394,1);
+        tmp.encoding=obj.substr(395,1);
+        tmp.compressSoftware=obj.substr(396,20);
+        tmp.currency=obj.substr(416,3);
+        tmp.branches=obj.substr(419,1);
+        tmp.space_2=obj.substr(420,46);
+        return tmp;
+    }
+}
 
 function run(){
-    var inputer=document.getElementById('input_1').value;
+    restart();
+    var inputer=bkmvdata_input;    //document.getElementById('bkmvdata_data').value;
     var sp=inputer.split("\n");
     var output_1=document.getElementById('output');
     b100Flag=document.getElementById('show_b100').checked;
@@ -38,6 +153,7 @@ function run(){
     d120Flag=document.getElementById('show_d120').checked;
     m100Flag=document.getElementById('show_m100').checked;
     printFlag=document.getElementById('print_type').checked;
+    
     printLine("Show B100: " + b100Flag);
     printLine("Show B110: " + b110Flag);
     printLine("Show C100: " + c100Flag);
@@ -52,7 +168,17 @@ function run(){
     var d110=[];
     var d120=[];
 
+    processIni();
     printLine('Total records in file:');
+
+    var totalRecords={
+        a100:0,
+        b100:0,
+        b110:0,
+        c100:0,
+        d110:0,
+        d120:0,
+    };
 
     for(var i=0;i<sp.length;i++){
         let current=sp[i].substring(0,4);
@@ -60,23 +186,33 @@ function run(){
         switch(current){
             case 'A100':
                 a100.push(sp[i]);
+                totalRecords.a100++;
                 break;
             case 'B100':
                 b100.push(sp[i]);
+                totalRecords.b100++;
                 break;
             case 'B110':
                 b110.push(sp[i]);
+                totalRecords.b110++;
                 break;
             case 'C100':
                 c100.push(sp[i]);
+                totalRecords.c100++;
                 break;
             case 'D110':
                 d110.push(sp[i]);
+                totalRecords.d110++;
                 break;
             case 'D120':
                 d120.push(sp[i]);
+                totalRecords.d120++;
                 break;
         }
+    }
+
+    for(let [key,value] of Object.entries(totalRecords)){
+        printLine(key + ": " + value + "\t");
     }
 
     var C100=processC100(c100);
@@ -126,6 +262,8 @@ function processC100(c100){
         c100o.user=c100[i].substr(415,9);                    
         c100o.id=id=c100[i].substr(424,7);
         c100o.spaces_3=c100[i].substr(431,13);
+        c100o.amountTaxDis=parseFloat(c100o.totalafterdiscount)+parseFloat(c100o.vattotal)!=parseFloat(c100o.grossamt)?true:false;
+        c100o.amountTaxDisDescription=parseFloat(c100o.totalafterdiscount)/100 + " + " + parseFloat(c100o.vattotal)/100 + " != " + parseFloat(c100o.grossamt)/100;
         c100Obj.push(c100o);
     }
     //printLine(c100Obj);
@@ -135,6 +273,9 @@ function processC100(c100){
 function processD110(d110){
     d110Obj.length=0;
     for(let i=0;i<d110.length;i++){
+        let descripancy_rate=parseFloat(document.getElementById('descripancy_rate').value);
+        let over_rate;
+        descripancy_rate>0?over_rate=descripancy_rate:over_rate=0;
         var d110o={};
         d110o.toString=generalToString;           
         d110o.code=d110[i].substr(0,4);
@@ -161,8 +302,9 @@ function processD110(d110){
         d110o.id=d110[i].substr(304,7);
         d110o.branchid=d110[i].substr(311,7);
         d110o.space=d110[i].substr(318,21);
-        d110o.rateQuantityDis=Math.abs(((parseFloat(d110o.rate)/100)*(parseFloat(d110o.quantity)/10000))-(parseFloat(d110o.amount)/100))>1?true:false;
-        d110o.rqadetail=(parseFloat(d110o.rate)/100)+ "*" + (parseFloat(d110o.quantity)/10000) + "=" + (parseFloat(d110o.amount)/100);
+        d110o.rateQuantityDis=Math.abs(((parseFloat(d110o.rate)/100)*(parseFloat(d110o.quantity)/10000))-(parseFloat(d110o.amount)/100)-Math.abs(parseFloat(d110o.discount)/100))>over_rate?true:false;
+        //Math.abs((parseFloat(d110o.amount)/100)/((parseFloat(d110o.rate)/100)*(parseFloat(d110o.quantity)/10000)-(parseFloat(d110o.amount)/100)))*100>over_rate?true:false;         
+        d110o.rqadetail=(parseFloat(d110o.rate)/100)+ " * " + (parseFloat(d110o.quantity)/10000) + " = " + (parseFloat(d110o.amount)/100);
         d110Obj.push(d110o);
     }
     //printLine(d110Obj);
@@ -470,9 +612,11 @@ function showTotals(c100, d110, d120, b110, b100){
         }
     }
 
+    //if(urObj_result.length>0)   document.getElementById('summary_error').checked=true;
+    let element=document.getElementById('summary_error');
     //printLine('Transactions with discrepency between D110 and C100:');
     //printLine(urObj_result);
-    print(false, urObj_result, 'Transactions with discrepency between D110 and C100:');
+    print(true, urObj_result, 'Transactions with discrepency between D110 and C100:', element);
     
     //Restart results object
     urObj_result.length=0;
@@ -483,7 +627,8 @@ function showTotals(c100, d110, d120, b110, b100){
     }
    // printLine('D110/D120 without C100:');
    // printLine(urObj_result);
-    print(true, urObj_result, 'D110/D120 without C100:');
+   element=document.getElementById('d110_no_c100_error');
+    print(true, urObj_result, 'D110/D120 without C100:',element);
 
     urObj_result.length=0;
 
@@ -493,7 +638,8 @@ function showTotals(c100, d110, d120, b110, b100){
     }
     //printLine('C100 without D110:');
     //printLine(urObj_result);
-    print(true, urObj_result, 'C100 without D110:');
+    element=document.getElementById('c100_no_d110_error');
+    print(true, urObj_result, 'C100 without D110:', element);
 
     urObj_result.length=0;
 
@@ -502,24 +648,51 @@ function showTotals(c100, d110, d120, b110, b100){
         if(d110[i].rateQuantityDis){
             let tmp={};
             tmp.id=parseInt(d110[i].id);
-            tmp.detail=d110[i].rqadetail;            
+            tmp.detail=d110[i].rqadetail;
+            tmp.discount=parseFloat(d110[i].discount)/100;
+            tmp.type=titleConvert[d110[i].doctype];   
+            tmp.calculation=(parseFloat(d110[i].rate)/100)*(parseFloat(d110[i].quantity)/10000);
+            tmp.difference=Math.abs((parseFloat(d110[i].amount)/100)-tmp.calculation);    
+            tmp.tolerance=(tmp.difference/(parseFloat(d110[i].amount)/100))*100 + '%';
             urObj_result.push(tmp);
         }  
     }
     //printLine('D110 Discrepancy between Rate*Quantity to Amount:');
     //printLine(urObj_result);
-    print(true, urObj_result, 'D110 Discrepancy between Rate*Quantity to Amount:');
+    element=document.getElementById('rate_quantity_error');
+    print(true, urObj_result, 'D110 Discrepancy between Rate*Quantity to Amount:', element);
+
+    urObj_result.length=0;
+
+    //Show C100 where amount + vat does not equal to gross amount
+    for(let i=1;i<c100.length;i++){
+        if(c100[i].amountTaxDis){
+            let tmp={};
+            tmp.id=parseInt(c100[i].id);
+            tmp.detail=c100[i].amountTaxDisDescription;
+            tmp.amount=parseFloat(c100[i].totalafterdiscount)/100;
+            tmp.vat=parseFloat(c100[i].vattotal)/100;
+            tmp.grossamt=parseFloat(c100[i].grossamt)/100;
+            tmp.type=titleConvert[d110[i].doctype];   
+            urObj_result.push(tmp);
+        }  
+    }
+    //printLine('D110 Discrepancy between Rate*Quantity to Amount:');
+    //printLine(urObj_result);
+    element=document.getElementById('grossamt_error');
+    print(true, urObj_result, 'C100 where amount + vat does not equal gross amount:', element);
 
     return total;
 }
 
-function print(flag, record, name){
+function print(flag, record, name, _e){
     if(flag){
         //printLine(name + ' Account Display:')
        // printLine(record);
         printLine(name);
         printLine(record);
     }
+    if(record.length>0 && _e)    _e.checked=true;
 }
 
 function printLine(line){
@@ -530,17 +703,69 @@ function printLine(line){
             </script>
     </head>
     <body>
-        <textarea id='input_1' rows="30" cols="130"></textarea><br /><br />
-        <button id='runner' onclick="run()">Analyze</button><br /><br />       
-        <label><b>Advanced Settings</b></label><br /><br />
-        <input type='checkbox' id='show_b100'><label for='show_b100'>Show B100 Records</label><br />
-        <input type='checkbox' id='show_b110'><label for='show_b110'>Show B110 Records</label><br />
-        <input type='checkbox' id='show_c100'><label for='show_c100'>Show C100 Records</label><br />
-        <input type='checkbox' id='show_d110'><label for='show_d110'>Show D110 Records</label><br />
-        <input type='checkbox' id='show_d120'><label for='show_d120'>Show D120 Records</label><br />
-        <input type='checkbox' id='show_m100'><label for='show_m100'>Show M100 Records</label><br /> 
-        <input type='checkbox' id='print_type'><label for='print_type'>Print to screen</label><br />
-        <label for='show_ids'>Show Specific Records(,)</label>&nbsp;<input type='text' id='show_ids'><br /><br /> 
-        <textarea id='output' rows="30" cols="130"></textarea><br /><br />
+        <script type="text/javascript">
+                function exportToCsv() {
+                var myCsv = "Col1,Col2,Col3\nval1,val2,val3";
+
+                window.open('data:text/csv;charset=utf-8,' + escape(myCsv));
+            }
+        </script>
+        <!--
+        <textarea id='bkmvdata_data' rows="15" cols="65"></textarea>
+        <textarea id='ini_data' rows="15" cols="65"></textarea><br /><br />
+        -->
+        <table>
+            <tr>
+                <td>
+                    <label for='bkmvdata'>BKMVDATA&nbsp;&nbsp;&nbsp;&nbsp;</label><br />
+                    <label for='ini'>INI&nbsp;&nbsp;&nbsp;&nbsp;</label><br /><br />
+                </td>
+                <td>
+                    <input id="bkmvdata" type="file"/><br />
+                    <input id="ini" type="file"/><br /><br />
+                </td>
+            </tr>
+        </table>
+        
+        
+        <button id='runner' onclick="loadFile()">Analyze</button><br /><br />       
+        <button id='b' onclick="exportToCsv()">Excel</button><br /><br />  
+        <table>
+            <tr>
+                <td>
+                    <label><b>Advanced Settings</b></label><br /><br />
+                    <input type='checkbox' id='show_b100'><label for='show_b100'>Show B100 Records</label><br />
+                    <input type='checkbox' id='show_b110'><label for='show_b110'>Show B110 Records</label><br />
+                    <input type='checkbox' id='show_c100'><label for='show_c100'>Show C100 Records</label><br />
+                    <input type='checkbox' id='show_d110'><label for='show_d110'>Show D110 Records</label><br />
+                    <input type='checkbox' id='show_d120'><label for='show_d120'>Show D120 Records</label><br />
+                    <input type='checkbox' id='show_m100'><label for='show_m100'>Show M100 Records</label><br /> 
+                    <input type='checkbox' id='print_type'><label for='print_type'>Print to screen</label><br />
+                    <table>
+                        <tr>
+                            <td>
+                                <label for='descripancy_rate'>Descripancy Rate (rate*quantity=amount)</label><br />
+                                <label for='show_ids'>Show Specific Records(,)</label>
+                            </td>
+                            <td>
+                                <input type='text' id='descripancy_rate' value='20'><br />
+                                <input type='text' id='show_ids'>
+                            </td>
+                        </tr>
+                    </table>
+                    
+                </td>
+                <td style='vertical-align:top;'>
+                    <label><b>Errors Detected</b></label><br /><br />
+                    <input type='checkbox' id='summary_error' disabled><label for='summary_error'>Summary Error</label><br />
+                    <input type='checkbox' id='d110_no_c100_error' disabled><label for='d110_no_c100_error'>D110 with no C100 Error</label><br />
+                    <input type='checkbox' id='c100_no_d110_error' disabled><label for='c100_no_d110_error'>C100 with no D110 Error</label><br />
+                    <input type='checkbox' id='rate_quantity_error' disabled><label for='rate_quantity_error'>R*Q=A Error</label><br />
+                    <input type='checkbox' id='grossamt_error' disabled><label for='grossamt_error'>Amount VAT Error</label><br />
+                </td>
+            </tr>
+        </table>
+        <br /><br /> 
+        <textarea id='output' rows="15" cols="65"></textarea><br /><br />
     </body>
 </html>
