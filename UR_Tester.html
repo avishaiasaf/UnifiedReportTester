@@ -68,15 +68,19 @@ function processIni(){
         d120:0,
         m100:0,
     };
+    var a000=[];
     totalRecords.toString=generalToString;
-    var a100Obj={};
-    a100Obj.toString=generalToString;
+    //var a100Obj={};
+    //a100Obj.toString=generalToString;
     for(let i=0;i<input.length;i++){
         let current=input[i].substring(0,4);
         //printLine(sp[i].substring(0,4))
         switch(current){
             case 'A000':
-                a100Obj=processHeader(input[i]);
+                //a100Obj=processHeader(input[i]);
+                a000.push(input[i]);
+                var A000=processRecord(a000);
+                console.log(A000);
                 break;
             case 'B100':
                 totalRecords.b100=parseInt(input[i].substr(4,15));
@@ -99,48 +103,7 @@ function processIni(){
         }
     }
 
-    //print(true, a100Obj, 'INI Header: ');
-    //print(true, totalRecords, 'Records in file: ');
-
-    function processHeader(obj){
-        var tmp={};
-        tmp.toString=generalToString;
-        tmp.space=obj.substr(4,5);
-        tmp.totalRecords=obj.substr(9,15);
-        tmp.empNumber=obj.substr(24,9);
-        tmp.indentifier=obj.substr(34,15);
-        tmp.systemConst=obj.substr(48,8);
-        tmp.softwareId=obj.substr(456,8);
-        tmp.softwareName=obj.substr(64,20);
-        tmp.softwareVersion=obj.substr(84,20);
-        tmp.softwareOwnerId=obj.substr(104,9);
-        tmp.softwareOwnerName=obj.substr(113,20);
-        tmp.softwareType=obj.substr(133,1);
-        tmp.fileSaveDirectory=obj.substr(134,50);
-        tmp.softwareBookkeeping=obj.substr(184,1);
-        tmp.requiredAccounting=obj.substr(185,1);
-        tmp.companyNumber=obj.substr(186,9);
-        tmp.companyWhNumber=obj.substr(195,9);
-        tmp.space_1=obj.substr(204,10);
-        tmp.companyName=obj.substr(214,50);
-        tmp.address=obj.substr(264,50);
-        tmp.addressNum=obj.substr(314,10);
-        tmp.addressCity=obj.substr(324,30);
-        tmp.zip=obj.substr(354,8);
-        tmp.taxYear=obj.substr(362,4);
-        tmp.startDate=obj.substr(366,8);
-        tmp.endDate=obj.substr(374,8);
-        tmp.dateGenerated=obj.substr(382,8);
-        tmp.hourGenerated=obj.substr(390,4);
-        tmp.Language=obj.substr(394,1);
-        tmp.encoding=obj.substr(395,1);
-        tmp.compressSoftware=obj.substr(396,20);
-        tmp.currency=obj.substr(416,3);
-        tmp.branches=obj.substr(419,1);
-        tmp.space_2=obj.substr(420,46);
-        return tmp;
-    }
-    exports.a100=a100Obj;
+    exports.a100=A000;   //a100Obj;
     exports.records=totalRecords;
     return exports;
 }
@@ -237,12 +200,11 @@ function run(){
 
     var A100=processRecord(a100);
     var C100=processC100(c100);
-    var D110=processD110(d110);
-    //var D120=processD120(d120);
+    var D110=processRecord(d110);
     var D120=processRecord(d120);
-    var B110=processB110(b110);
-    var B100=processB100(b100);
-    var M100=processB100(m100);
+    var B110=processRecord(b110);
+    var B100=processRecord(b100);
+    var M100=processRecord(m100);
     var Z900=processRecord(z900);
     var total_c=showTotals(C100, D110, D120, B110, B100, M100, A100, Z900);
 
@@ -293,180 +255,10 @@ function processC100(c100){
     return c100Obj;
 }
 
-function processD110(d110){
-    d110Obj.length=0;
-    for(let i=0;i<d110.length;i++){
-        let descripancy_rate=parseFloat(document.getElementById('descripancy_rate').value);
-        let over_rate;
-        descripancy_rate>0?over_rate=descripancy_rate:over_rate=0;
-        var d110o={};
-        d110o.toString=generalToString;           
-        d110o.code=d110[i].substr(0,4);
-        d110o.fileno=parseInt(d110[i].substr(4,9));
-        d110o.empno=parseInt(d110[i].substr(13,9));
-        d110o.doctype=parseInt(d110[i].substr(22,3));
-        d110o.docnum=parseInt(d110[i].substr(25,20));
-        d110o.doclinenum=d110[i].substr(45,4);
-        d110o.docmaintype=d110[i].substr(49,3);
-        d110o.docmainnum=d110[i].substr(52,10);
-        d110o.trantype=d110[i].substr(72,1);
-        d110o.itemid=d110[i].substr(73,20);
-        d110o.itemdescription=d110[i].substr(93,30);
-        d110o.manufacturer=d110[i].substr(123,50);
-        d110o.serialnumber=d110[i].substr(173,30);
-        d110o.unittype=d110[i].substr(203,20);
-        d110o.quantity=d110[i].substr(223,17);
-        d110o.rate=d110[i].substr(240,15);
-        d110o.discount=d110[i].substr(255,15);
-        d110o.amount=d110[i].substr(270,15);
-        d110o.vat=d110[i].substr(285,4);
-        d110o.branch=d110[i].substr(289,7);
-        d110o.duedate=d110[i].substr(296,8);
-        d110o.id=d110[i].substr(304,7);
-        d110o.branchid=d110[i].substr(311,7);
-        d110o.space=d110[i].substr(318,21);
-        d110o.rateQuantityDis=Math.abs(((parseFloat(d110o.rate)/100)*(parseFloat(d110o.quantity)/10000))-(parseFloat(d110o.amount)/100)-Math.abs(parseFloat(d110o.discount)/100))>over_rate?true:false;
-        //Math.abs((parseFloat(d110o.amount)/100)/((parseFloat(d110o.rate)/100)*(parseFloat(d110o.quantity)/10000)-(parseFloat(d110o.amount)/100)))*100>over_rate?true:false;         
-        d110o.rqadetail=(parseFloat(d110o.rate)/100)+ " * " + (parseFloat(d110o.quantity)/10000) + " = " + (parseFloat(d110o.amount)/100);
-        d110Obj.push(d110o);
-    }
-    //printLine(d110Obj);
-    return d110Obj;
-}
-
-function processD120(d120){
-    d120Obj.length=0;
-    for(let i=0;i<d120.length;i++){
-        d120o={};  
-        d120o.toString=generalToString;               
-        d120o.code=d120[i].substr(0,4);
-        d120o.fileno=d120[i].substr(4,9);
-        d120o.empno=d120[i].substr(13,9);
-        d120o.doctype=d120[i].substr(22,3);
-        d120o.docnum=d120[i].substr(25,20);
-        d120o.doclinenum=d120[i].substr(45,4);
-        d120o.paymentmethod=d120[i].substr(49,1);
-        d120o.banknumber=d120[i].substr(50,10);
-        d120o.branchnumber=d120[i].substr(60,10);
-        d120o.acctnumber=d120[i].substr(70,15);
-        d120o.checknumber=d120[i].substr(85,10);
-        d120o.paydate=d120[i].substr(95,8);
-        d120o.amount=d120[i].substr(103,15);
-        d120o.clearingcompany=d120[i].substr(118,1);
-        d120o.creditcard=d120[i].substr(119,20);
-        d120o.credittype=d120[i].substr(139,1);
-        d120o.branchid=d120[i].substr(140,7);
-        d120o.docdate=d120[i].substr(147,8);
-        d120o.id=d120[i].substr(155,7);
-        d120o.space=d120[i].substr(162,60);
-        d120Obj.push(d120o);
-    }
-    //printLine(d120Obj);
-    return d120Obj;
-}
-
-function processB110(b110){
-    b110Obj.length=0;
-    for(let i=0;i<b110.length;i++){
-        b110o={};
-        b110o.toString=generalToString;                   
-        b110o.code=b110[i].substr(0,4);
-        b110o.fileno=b110[i].substr(4,9);
-        b110o.empno=b110[i].substr(13,9);
-        b110o.acctnumber=parseInt(b110[i].substr(22,15));
-        b110o.acctname=b110[i].substr(37,50);
-        b110o.bscode=b110[i].substr(87,15);
-        b110o.bsdescription=b110[i].substr(102,30);
-        b110o.clientstreet=b110[i].substr(132,50);
-        b110o.clientno=b110[i].substr(182,10);
-        b110o.clientcity=b110[i].substr(192,30);
-        b110o.clientzip=b110[i].substr(222,8);
-        b110o.clientcountry=b110[i].substr(230,30);
-        b110o.countrycode=b110[i].substr(260,2);
-        b110o.summaryacct=b110[i].substr(262,15);
-        b110o.openbalance=parseFloat(b110[i].substr(277,15));
-        b110o.debit=parseFloat(b110[i].substr(292,15));
-        b110o.credit=parseFloat(b110[i].substr(307,15));
-        b110o.accountingcode=b110[i].substr(322,4);
-        b110o.entitytaxid=b110[i].substr(326,9);
-        b110o.branchid=b110[i].substr(335,7);
-        b110o.fxopenbalance=b110[i].substr(342,15);
-        b110o.currency=b110[i].substr(357,3);
-        b110o.space=b110[i].substr(360,16);
-        b110Obj.push(b110o);
-    }
-    //printLine(b110Obj);
-    return b110Obj;
-}
-
-function processB100(b100){
-    b100Obj.length=0;
-    for(let i=0;i<b100.length;i++){
-        b100o={}; 
-        b100o.toString=generalToString;                  
-        b100o.code=b100[i].substr(0,4);
-        b100o.fileno=b100[i].substr(4,9);
-        b100o.empno=b100[i].substr(13,9);
-        b100o.trannumber=parseInt(b100[i].substr(22,10));
-        b100o.linenumber=b100[i].substr(32,5);
-        b100o.space_1=b100[i].substr(37,8);
-        b100o.trantype=b100[i].substr(45,15);
-        b100o.referencenumber=b100[i].substr(60,20);
-        b100o.rectyoe=b100[i].substr(80,3);
-        b100o.reference_2=b100[i].substr(83,20);
-        b100o.rectype_2=b100[i].substr(103,3);
-        b100o.details=b100[i].substr(106,50);
-        b100o.date=b100[i].substr(156,8);
-        b100o.duedate=b100[i].substr(164,8);
-        b100o.account=parseFloat(b100[i].substr(172,15));
-        b100o.contraaccount=parseFloat(b100[i].substr(187,15));
-        b100o.trandirection=parseFloat(b100[i].substr(202,1));
-        b100o.currency=b100[i].substr(203,3);
-        b100o.tranamount=b100[i].substr(206,15);
-        b100o.tranfxamount=b100[i].substr(221,15);
-        b100o.quantity=b100[i].substr(236,12);
-        b100o.space_2=b100[i].substr(248,10);
-        b100o.space_3=b100[i].substr(258,10);
-        b100o.space_4=b100[i].substr(268,7);
-        b100o.datecreated=b100[i].substr(275,8);
-        b100o.createdby=b100[i].substr(283,9);
-        b100o.space_5=b100[i].substr(292,25);
-        b100Obj.push(b100o);
-    }
-    //printLine(b100Obj);
-    return b100Obj;
-}
-
-function processM100(m100){
-    m100Obj.length=0;
-    for(let i=0;i<m100.length;i++){
-        m100o={}; 
-        m100o.toString=generalToString;                  
-        m100o.code=m100[i].substr(0,4);
-        m100o.fileno=m100[i].substr(4,9);
-        m100o.empno=m100[i].substr(13,9);
-        m100o.itemSerial=m100[i].substr(22,20);
-        m100o.itemVendorSerial=m100[i].substr(42,20);
-        m100o.internalSerial=m100[i].substr(62,20);
-        m100o.itemName=m100[i].substr(82,50);
-        m100o.sortCode=m100[i].substr(132,10);
-        m100o.sortCodeDescription=m100[i].substr(142,30);
-        m100o.unitType=m100[i].substr(172,20);
-        m100o.itemOpenBalance=m100[i].substr(192,12);
-        m100o.totalDebit=m100[i].substr(204,12);
-        m100o.totalCredit=m100[i].substr(216,12);
-        m100o.endCost=m100[i].substr(228,10);
-        m100o.endCostA=m100[i].substr(238,10);
-        m100o.space=m100[i].substr(248,50);
-        m100Obj.push(m100o);
-    }
-    //printLine(m100Obj);
-    return m100Obj;
-}
-
-
 function processRecord(record){
+    if(record.length==0) return;
     var type=record[0].substr(0,4);
+
     if(type=='Z900'){
         z900Obj.length=0;
         var variableNames=['code','fileno','empno','primaryIdentifier','SystemConst','totalRecords','space'];
@@ -496,15 +288,78 @@ function processRecord(record){
             d120Obj.push(processLine(record[i], variableNames, startPoints));
         }
         return d120Obj;
+    }else if(type=='A000'){
+        a100Obj.length=0;
+        console.log('in a000');
+        var variableNames=['code','space','totalRecords','empNumber','indentifier','systemConst','softwareId','softwareName','softwareVersion','softwareOwnerId',
+                        'softwareOwnerName','softwareType','fileSaveDirectory','softwareBookkeeping','requiredAccounting','companyNumber','companyWhNumber',
+                        'space_1','companyName','address','addressNum','addressCity','zip','taxYear','startDate','endDate','dateGenerated','hourGenerated',
+                        'Language','encoding','compressSoftware','currency','branches','space_2'];
+        var startPoints=[0,4,9,24,34,48,56,64,84,104,113,133,134,184,185,186,195,204,214,264,314,324,354,362,366,374,382,390,394,395,396,416,419,420];
+
+        for(let i=0;i<record.length;i++){
+            a100Obj.push(processLine(record[i], variableNames, startPoints));
+        }
+        return a100Obj;
+    }else if(type=='M100'){
+        m100Obj.length=0;
+        var variableNames=['code','fileno','empno','itemSerial','itemVendorSerial','internalSerial','itemName','sortCode','sortCodeDescription','unitType',
+                            'itemOpenBalance','totalDebit','totalCredit','endCost','endCostA','space'];
+        var startPoints=[0,4,13,22,42,62,82,132,142,172,192,204,216,228,238,248];
+
+        for(let i=0;i<record.length;i++){
+            m100Obj.push(processLine(record[i], variableNames, startPoints));
+        }
+        return m100Obj;
+    }else if(type=='B100'){
+        b100Obj.length=0;
+        var variableNames=['code','fileno','empno','trannumber','linenumber','space_1','trantype','referencenumber','rectyoe','reference_2',
+                            'rectype_2','details','date','duedate','account','contraaccount','trandirection','currency','tranamount','tranfxamount',
+                        'quantity','space_2','space_3','space_4','datecreated','createdby','space_5'];
+        var startPoints=[0,4,13,22,32,37,45,60,80,83,103,106,156,164,172,187,202,203,206,221,236,248,258,268,275,283,292];
+
+        for(let i=0;i<record.length;i++){
+            b100Obj.push(processLine(record[i], variableNames, startPoints));
+        }
+        return b100Obj;
+    }else if(type=='B110'){
+        b110Obj.length=0;
+        var variableNames=['code','fileno','empno','acctnumber','acctname','bscode','bsdescription','clientstreet','clientno','clientcity',
+                            'clientzip','clientcountry','countrycode','summaryacct','openbalance','debit','credit','accountingcode','entitytaxid','branchid',
+                        'fxopenbalance','currency','space'];
+        var startPoints=[0,4,13,22,37,87,102,132,182,192,222,230,260,262,277,292,307,322,326,335,342,357,360];
+
+        for(let i=0;i<record.length;i++){
+            b110Obj.push(processLine(record[i], variableNames, startPoints));
+        }
+        return b110Obj;
+    }else if(type=='D110'){
+        d110Obj.length=0;
+        var variableNames=['code','fileno','empno','doctype','docnum','doclinenum','docmaintype','docmainnum','trantype','itemid','itemdescription','manufacturer',
+                            'serialnumber','unittype','quantity','rate','discount','amount','vat','branch','duedate','id','branchid','space'];
+        var startPoints=[0,4,13,22,25,45,49,52,72,73,93,123,173,203,223,240,255,270,285,289,296,304,311,318];
+        let descripancy_rate=parseFloat(document.getElementById('descripancy_rate').value);
+        let over_rate;
+        descripancy_rate>0?over_rate=descripancy_rate:over_rate=0;
+
+        for(let i=0;i<record.length;i++){
+            d110Obj.push(processLine(record[i], variableNames, startPoints, over_rate));
+        }
+        return d110Obj;
     }
 }
 
-function processLine(recordLine, variableNames, startPoints){
+function processLine(recordLine, variableNames, startPoints, overRate){
     tmp={}; 
+    tmp.toString=generalToString;     
         for(let j=0;j<variableNames.length;j++){
             let space=startPoints[j+1]-startPoints[j];
             tmp[variableNames[j]]=recordLine.substr(startPoints[j], space);
         }
+    if(tmp.code=='D110'){
+        tmp.rateQuantityDis=Math.abs(((parseFloat(tmp.rate)/100)*(parseFloat(tmp.quantity)/10000))-(parseFloat(tmp.amount)/100)-Math.abs(parseFloat(tmp.discount)/100))>overRate?true:false;   
+        tmp.rqadetail=(parseFloat(tmp.rate)/100)+ " * " + (parseFloat(tmp.quantity)/10000) + " = " + (parseFloat(tmp.amount)/100);
+    }
     return tmp;
 }
 
@@ -606,24 +461,16 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
         }
     }
 
-    //printLine('Summary totals:')
-    //printLine(ur_total);
     print(true, ur_total, 'Summary totals:');
 
     //Show report records based on flags
-    //printLine(b100Flag);
     print(b100Flag, b100, 'B100 Records: ');
     print(b110Flag, b110, 'B110 Records: ');
     print(c100Flag, c100, 'C100 Records: ');
     print(d110Flag, d110, 'D110 Records: ');
     print(d120Flag, d120, 'D120 Records: ');
     print(m100Flag, m100, 'M100 Records: ');
-/*
-    if(b100Flag){
-        printLine('B110 Account Display:')
-        printLine(b110);
-    }
-*/
+
     //Analyze report dicrepencies
     
     for(let i=0;i<d120.length;i++){
@@ -692,9 +539,6 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
     }catch(e){
         printLine(e);
     }
-    
-
-    //printLine(urObj);
 
     //Show summary discrepencies C100 D110 and D120
     var urObj_result=[{}];
@@ -710,10 +554,9 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
         }
     }
 
-    //if(urObj_result.length>0)   document.getElementById('summary_error').checked=true;
+
     let element=document.getElementById('summary_error');
-    //printLine('Transactions with discrepency between D110 and C100:');
-    //printLine(urObj_result);
+
     print(true, urObj_result, 'Transactions with discrepency between D110 and C100:', element);
     
     //Restart results object
@@ -723,8 +566,7 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
     for(let i=1;i<urObj.length;i++){
         if(urObj[i].exceptionC100)  urObj_result.push(urObj[i]);
     }
-   // printLine('D110/D120 without C100:');
-   // printLine(urObj_result);
+
    element=document.getElementById('d110_no_c100_error');
     print(true, urObj_result, 'D110/D120 without C100:',element);
 
@@ -734,8 +576,7 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
     for(let i=1;i<urObj.length;i++){
         if(urObj[i].exceptionD110)  urObj_result.push(urObj[i]);
     }
-    //printLine('C100 without D110:');
-    //printLine(urObj_result);
+
     element=document.getElementById('c100_no_d110_error');
     print(true, urObj_result, 'C100 without D110:', element);
 
@@ -755,8 +596,7 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
             urObj_result.push(tmp);
         }  
     }
-    //printLine('D110 Discrepancy between Rate*Quantity to Amount:');
-    //printLine(urObj_result);
+
     element=document.getElementById('rate_quantity_error');
     print(true, urObj_result, 'D110 Discrepancy between Rate*Quantity to Amount:', element);
 
@@ -775,8 +615,7 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
             urObj_result.push(tmp);
         }  
     }
-    //printLine('D110 Discrepancy between Rate*Quantity to Amount:');
-    //printLine(urObj_result);
+
     element=document.getElementById('grossamt_error');
     print(true, urObj_result, 'C100 where amount + vat does not equal gross amount:', element);
 
@@ -800,12 +639,10 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
 
 function print(flag, record, name, _e){
     if(flag){
-        //printLine(name + ' Account Display:')
-       // printLine(record);
         printLine(name);
         printLine(record);
-    }
-    if(record.length>0 && _e)    _e.checked=true;
+        if(record.length>0 && _e)    _e.checked=true;
+    }    
 }
 
 function printLine(line){
