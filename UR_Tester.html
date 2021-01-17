@@ -2,11 +2,14 @@
     <head>
         <script>
 
+var a100Obj=[{}];
 var c100Obj=[{}];
 var d110Obj=[{}];
 var d120Obj=[{}];
 var b110Obj=[{}];
 var b100Obj=[{}];
+var m100Obj=[{}];
+var z900Obj=[{}];
 var b100Flag=false;
 var b110Flag=false;
 var c100Flag=false;
@@ -16,13 +19,6 @@ var m100Flag=false;
 var printFlag=false;
 var bkmvdata_input='';
 var ini_input='';
-
-//
-
-
-
-//
-
 
 function generalToString(){
     var str="\n-----------\n";
@@ -63,12 +59,14 @@ function loader(file, element){
 
 function processIni(){
     var input=ini_input.split('\n');  //document.getElementById('ini_data').value.split('\n');
+    var exports={};
     var totalRecords={
         b100:0,
         b110:0,
         c100:0,
         d110:0,
         d120:0,
+        m100:0,
     };
     totalRecords.toString=generalToString;
     var a100Obj={};
@@ -95,11 +93,14 @@ function processIni(){
             case 'D120':
                 totalRecords.d120=parseInt(input[i].substr(4,15));
                 break;
+            case 'M100':
+                totalRecords.m100=parseInt(input[i].substr(4,15));
+                break;
         }
     }
 
-    print(true, a100Obj, 'INI Header: ');
-    print(true, totalRecords, 'Records in file: ');
+    //print(true, a100Obj, 'INI Header: ');
+    //print(true, totalRecords, 'Records in file: ');
 
     function processHeader(obj){
         var tmp={};
@@ -139,6 +140,9 @@ function processIni(){
         tmp.space_2=obj.substr(420,46);
         return tmp;
     }
+    exports.a100=a100Obj;
+    exports.records=totalRecords;
+    return exports;
 }
 
 function run(){
@@ -167,8 +171,14 @@ function run(){
     var c100=[];
     var d110=[];
     var d120=[];
+    var m100=[];
+    var z900=[];
 
-    processIni();
+    var ini=processIni();
+
+    print(true, ini.a100, 'INI Header: ');
+    print(true, ini.records, 'Records in file: ');
+
     printLine('Total records in file:');
 
     var totalRecords={
@@ -178,6 +188,8 @@ function run(){
         c100:0,
         d110:0,
         d120:0,
+        m100:0,
+        z900:0,
     };
 
     for(var i=0;i<sp.length;i++){
@@ -208,6 +220,14 @@ function run(){
                 d120.push(sp[i]);
                 totalRecords.d120++;
                 break;
+            case 'M100':
+                m100.push(sp[i]);
+                totalRecords.m100++;
+                break;
+            case 'Z900':
+                z900.push(sp[i]);
+                totalRecords.z900++;
+                break;
         }
     }
 
@@ -215,13 +235,16 @@ function run(){
         printLine(key + ": " + value + "\t");
     }
 
+    var A100=processRecord(a100);
     var C100=processC100(c100);
-    //printLine(C100);
     var D110=processD110(d110);
-    var D120=processD120(d120);
+    //var D120=processD120(d120);
+    var D120=processRecord(d120);
     var B110=processB110(b110);
     var B100=processB100(b100);
-    var total_c=showTotals(C100, D110, D120, B110, B100);
+    var M100=processB100(m100);
+    var Z900=processRecord(z900);
+    var total_c=showTotals(C100, D110, D120, B110, B100, M100, A100, Z900);
 
 }
 
@@ -314,7 +337,7 @@ function processD110(d110){
 function processD120(d120){
     d120Obj.length=0;
     for(let i=0;i<d120.length;i++){
-        d120o={};    
+        d120o={};  
         d120o.toString=generalToString;               
         d120o.code=d120[i].substr(0,4);
         d120o.fileno=d120[i].substr(4,9);
@@ -414,8 +437,78 @@ function processB100(b100){
     return b100Obj;
 }
 
+function processM100(m100){
+    m100Obj.length=0;
+    for(let i=0;i<m100.length;i++){
+        m100o={}; 
+        m100o.toString=generalToString;                  
+        m100o.code=m100[i].substr(0,4);
+        m100o.fileno=m100[i].substr(4,9);
+        m100o.empno=m100[i].substr(13,9);
+        m100o.itemSerial=m100[i].substr(22,20);
+        m100o.itemVendorSerial=m100[i].substr(42,20);
+        m100o.internalSerial=m100[i].substr(62,20);
+        m100o.itemName=m100[i].substr(82,50);
+        m100o.sortCode=m100[i].substr(132,10);
+        m100o.sortCodeDescription=m100[i].substr(142,30);
+        m100o.unitType=m100[i].substr(172,20);
+        m100o.itemOpenBalance=m100[i].substr(192,12);
+        m100o.totalDebit=m100[i].substr(204,12);
+        m100o.totalCredit=m100[i].substr(216,12);
+        m100o.endCost=m100[i].substr(228,10);
+        m100o.endCostA=m100[i].substr(238,10);
+        m100o.space=m100[i].substr(248,50);
+        m100Obj.push(m100o);
+    }
+    //printLine(m100Obj);
+    return m100Obj;
+}
 
-function showTotals(c100, d110, d120, b110, b100){
+
+function processRecord(record){
+    var type=record[0].substr(0,4);
+    if(type=='Z900'){
+        z900Obj.length=0;
+        var variableNames=['code','fileno','empno','primaryIdentifier','SystemConst','totalRecords','space'];
+        //var spaces=[4,9,9,15,8,15,50];
+        var startPoints=[0,4,13,22,37,45,60];
+
+        for(let i=0;i<record.length;i++){
+            z900Obj.push(processLine(record[i], variableNames, startPoints));
+        }
+        return z900Obj;
+    }else if(type=='A100'){
+        a100Obj.length=0;
+        var variableNames=['code','fileno','empno','primaryIdentifier','SystemConst','space'];
+        var startPoints=[0,4,13,22,37,45];
+
+        for(let i=0;i<record.length;i++){
+            a100Obj.push(processLine(record[i], variableNames, startPoints));
+        }
+        return a100Obj;
+    }else if(type=='D120'){
+        d120Obj.length=0;
+        var variableNames=['code','fileno','empno','doctype','docnum','doclinenum','paymentmethod','banknumber',
+        'branchnumber','acctnumber','checknumber','paydate','amount','clearingcompany','creditcard','credittype','branchid','docdate','id','space'];
+        var startPoints=[0,4,13,22,25,45,49,50,60,70,85,95,103,118,119,139,140,147,155,162];  
+        
+        for(let i=0;i<record.length;i++){
+            d120Obj.push(processLine(record[i], variableNames, startPoints));
+        }
+        return d120Obj;
+    }
+}
+
+function processLine(recordLine, variableNames, startPoints){
+    tmp={}; 
+        for(let j=0;j<variableNames.length;j++){
+            let space=startPoints[j+1]-startPoints[j];
+            tmp[variableNames[j]]=recordLine.substr(startPoints[j], space);
+        }
+    return tmp;
+}
+
+function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
 
     var titleConvert={
         100: 'salesorder',
@@ -462,13 +555,17 @@ function showTotals(c100, d110, d120, b110, b100){
     }
     //printLine(ur_total);
 
+    //Print header and end lines
+    print(true, a100, 'A100 header line: ');
+    print(true, z900, 'Z900 summary line: ');
+
     //Find specific D110 line by id
-    var findId=Array.from(document.getElementById('show_ids').value.split(','));
+    var findId=Array.from((',' + document.getElementById('show_ids').value).split(','));
     //var findId=23030;
     //printLine(findId);
         for(let i=0;i<d110.length;i++){
             if(findId.indexOf(parseInt(d110[i].id).toString())>0){
-                printLine(d110[i]);
+                print(true, d110[i], 'Record requested: ');
                 //printLine+=d110[i];
             }               
         }
@@ -520,6 +617,7 @@ function showTotals(c100, d110, d120, b110, b100){
     print(c100Flag, c100, 'C100 Records: ');
     print(d110Flag, d110, 'D110 Records: ');
     print(d120Flag, d120, 'D120 Records: ');
+    print(m100Flag, m100, 'M100 Records: ');
 /*
     if(b100Flag){
         printLine('B110 Account Display:')
@@ -682,6 +780,21 @@ function showTotals(c100, d110, d120, b110, b100){
     element=document.getElementById('grossamt_error');
     print(true, urObj_result, 'C100 where amount + vat does not equal gross amount:', element);
 
+    //Show if C100 lines are negative
+    urObj_result.length=0;
+
+    for(let i=1;i<c100.length;i++){
+        if(parseFloat(c100[i].amountTaxDis)<0){
+            let tmp={};
+            tmp.id=parseInt(c100[i].id);
+            tmp.amount=parseFloat(c100[i].totalafterdiscount)/100;
+            tmp.type=titleConvert[d110[i].doctype];   
+            urObj_result.push(tmp);
+        }  
+    }
+
+    print(true, urObj_result, 'C100 where amount is negative:', element);
+
     return total;
 }
 
@@ -703,13 +816,6 @@ function printLine(line){
             </script>
     </head>
     <body>
-        <script type="text/javascript">
-                function exportToCsv() {
-                var myCsv = "Col1,Col2,Col3\nval1,val2,val3";
-
-                window.open('data:text/csv;charset=utf-8,' + escape(myCsv));
-            }
-        </script>
         <!--
         <textarea id='bkmvdata_data' rows="15" cols="65"></textarea>
         <textarea id='ini_data' rows="15" cols="65"></textarea><br /><br />
@@ -717,19 +823,18 @@ function printLine(line){
         <table>
             <tr>
                 <td>
-                    <label for='bkmvdata'>BKMVDATA&nbsp;&nbsp;&nbsp;&nbsp;</label><br />
-                    <label for='ini'>INI&nbsp;&nbsp;&nbsp;&nbsp;</label><br /><br />
+                    <label for='ini'>INI&nbsp;&nbsp;&nbsp;&nbsp;</label><br />
+                    <label for='bkmvdata'>BKMVDATA&nbsp;&nbsp;&nbsp;&nbsp;</label><br /><br />
                 </td>
                 <td>
-                    <input id="bkmvdata" type="file"/><br />
-                    <input id="ini" type="file"/><br /><br />
+                    <input id="ini" type="file"/><br />
+                    <input id="bkmvdata" type="file"/><br /><br />
                 </td>
             </tr>
         </table>
         
         
-        <button id='runner' onclick="loadFile()">Analyze</button><br /><br />       
-        <button id='b' onclick="exportToCsv()">Excel</button><br /><br />  
+        <button id='runner' onclick="loadFile()">Analyze</button><br /><br />        
         <table>
             <tr>
                 <td>
