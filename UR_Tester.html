@@ -1,15 +1,13 @@
 <html>
     <head>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
         <script>
-
-var a100Obj=[{}];
-var c100Obj=[{}];
-var d110Obj=[{}];
-var d120Obj=[{}];
-var b110Obj=[{}];
-var b100Obj=[{}];
-var m100Obj=[{}];
-var z900Obj=[{}];
+        document.addEventListener("DOMContentLoaded", function(event) {
+            saveDisable();
+        });
+            
+            const CONVERTTOEXCEL=true;
+var a100Obj=[{}],c100Obj=[{}],d110Obj=[{}],d120Obj=[{}],b110Obj=[{}],b100Obj=[{}],m100Obj=[{}],z900Obj=[{}];
 var b100Flag=false;
 var b110Flag=false;
 var c100Flag=false;
@@ -19,7 +17,9 @@ var m100Flag=false;
 var printFlag=false;
 var bkmvdata_input='';
 var ini_input='';
-
+var output_variable='';
+var recordType=['b100','b110','c100','d110','d120','m100'];
+/*
 function generalToString(){
     var str="\n-----------\n";
     for(let [key,value] of Object.entries(this)){
@@ -28,37 +28,108 @@ function generalToString(){
     str+='\n';
     return str;
 }
+*/
+var variableNamesA000=['code','space','totalRecords','empNumber','indentifier','systemConst','softwareId','softwareName','softwareVersion','softwareOwnerId',
+                        'softwareOwnerName','softwareType','fileSaveDirectory','softwareBookkeeping','requiredAccounting','companyNumber','companyWhNumber',
+                        'space_1','companyName','address','addressNum','addressCity','zip','taxYear','startDate','endDate','dateGenerated','hourGenerated',
+                        'Language','encoding','compressSoftware','currency','branches','space_2'];
+var variableNamesZ900=['code','fileno','empno','primaryIdentifier','SystemConst','totalRecords','space'];
+var variableNamesA100=['code','fileno','empno','primaryIdentifier','SystemConst','space'];
+var variableNamesD120=['code','fileno','empno','doctype','docnum','doclinenum','paymentmethod','banknumber',
+        'branchnumber','acctnumber','checknumber','paydate','amount','clearingcompany','creditcard','credittype','branchid','docdate','id','space'];
+var variableNamesM100=['code','fileno','empno','itemSerial','itemVendorSerial','internalSerial','itemName','sortCode','sortCodeDescription','unitType',
+                    'itemOpenBalance','totalDebit','totalCredit','endCost','endCostA','space'];
+var variableNamesB100=['code','fileno','empno','trannumber','linenumber','space_1','trantype','referencenumber','rectyoe','reference_2',
+                    'rectype_2','details','date','duedate','account','contraaccount','trandirection','currency','tranamount','tranfxamount',
+                    'quantity','space_2','space_3','space_4','datecreated','createdby','space_5'];
+var variableNamesB110=['code','fileno','empno','acctnumber','acctname','bscode','bsdescription','clientstreet','clientno','clientcity',
+                    'clientzip','clientcountry','countrycode','summaryacct','openbalance','debit','credit','accountingcode','entitytaxid','branchid',
+                    'fxopenbalance','currency','space'];
+var variableNamesD110=['code','fileno','empno','doctype','docnum','doclinenum','docmaintype','docmainnum','trantype','itemid','itemdescription','manufacturer',
+                    'serialnumber','unittype','quantity','rate','discount','amount','vat','branch','duedate','id','branchid','space'];
+var variableNamesC100=['code','fileno','empno','doctype','docnum','docdate','dochour','customer','addrstreet','addrnumber','addrcity','addrzip',
+                    'addrcountry','addrcountrycode','phone','taxnumber','duedate','docfxtotal','currency','totalbeforediscount','discount',
+                    'totalafterdiscount','vattotal','grossamt','entityid','spaces_1','spaces_2','docdate_1','branch','user','id','spaces_3'];
+
+function saveDisable(){
+    document.getElementById("save").disabled = true;
+}
+
+function exportToCsv(){
+    var output=output_variable      //document.getElementById('output').value;   //'<table><tr><td>1</td><td>2</td></tr><tr><td>11</td><td>22</td></tr></table>';
+        
+    //Empty out the box first
+    $("#hidden_box").empty()
+    
+    //grab the data in the table
+    var data = output;  //$('#data_table').html();  
+    
+    //make a blob
+    var excel_blob = new Blob([data], {type:'data:application/vnd.ms-excel;base64'}); 
+    
+    //create a link with the href of the blob and click on it
+    var link = $("<a>").attr({
+        href : window.webkitURL.createObjectURL(excel_blob),
+        download : "Unified Report Results.xls"
+    }).appendTo("#hidden_box")
+    link.get(0).click()
+}
+
+function generalToString(){ //excelToString(){
+    var str='';
+    if(CONVERTTOEXCEL)  str+='<tr>';
+    for(let [key,value] of Object.entries(this)){
+        if(key!='toString' && key!='toStringTitle')     str+=convertCell(value);  //str+='<td>' + key + ": " + value + "</td>";
+    }
+    if(CONVERTTOEXCEL)  str+='</tr>';
+    return str;
+}
+
+function toStringTitle(obj){
+    var str='';
+    if(CONVERTTOEXCEL)  str+='<tr>';
+    for(let [key,value] of Object.entries(obj)){
+        if(key!='toString' && key!='toStringTitle')     str+=convertCell(key.toString());
+    }
+    if(CONVERTTOEXCEL)  str+='</tr>';
+    return str; 
+}
          
-function restart(){
-    document.getElementById('grossamt_error').checked=false;
-    document.getElementById('rate_quantity_error').checked=false;
-    document.getElementById('c100_no_d110_error').checked=false;
-    document.getElementById('d110_no_c100_error').checked=false;
-    document.getElementById('summary_error').checked=false;
+function restart(className){
+    var rejects=document.getElementsByClassName(className);
+    for(let i=0;i<rejects.length;i++){
+        document.getElementsByClassName(className)[i].checked=false;
+    }    
+    //document.getElementById('output').value='<table border="1">';
+    output_variable='<table border="1">';
+    document.getElementById('output_table').innerHTML = "";
+    console.clear();
+}
+
+function reset(){
+    restart('ur_rejects');
+    restart('ur_feature');   
+    saveDisable();  
 }
 
 function loadFile(){
     var bkmvdata_file = document.getElementById("bkmvdata").files[0];
-    //var bkmvdata_element = document.getElementById("bkmvdata_data");
     var ini_file = document.getElementById("ini").files[0];
-    //var ini_element = document.getElementById("ini_data");
-    loader(bkmvdata_file, 'bkmvdata');  //bkmvdata_element);
-    loader(ini_file, 'ini');    //ini_element);
+    loader(bkmvdata_file, 'bkmvdata');  
+    loader(ini_file, 'ini');   
     setTimeout(run,500);
 }
 
 function loader(file, element){
     var reader = new FileReader();
     reader.onload = function (e) {
-        //element.value = e.target.result;
         element=='ini'?ini_input=e.target.result:bkmvdata_input=e.target.result;
-        console.log(element);
     };
     reader.readAsText(file);
 }
 
 function processIni(){
-    var input=ini_input.split('\n');  //document.getElementById('ini_data').value.split('\n');
+    var input=ini_input.split('\n');  
     var exports={};
     var totalRecords={
         b100:0,
@@ -70,79 +141,100 @@ function processIni(){
     };
     var a000=[];
     totalRecords.toString=generalToString;
-    //var a100Obj={};
-    //a100Obj.toString=generalToString;
+    totalRecords.toStringTitle=toStringTitle;
+
     for(let i=0;i<input.length;i++){
         let current=input[i].substring(0,4);
-        //printLine(sp[i].substring(0,4))
         switch(current){
-            case 'A000':
-                //a100Obj=processHeader(input[i]);
-                a000.push(input[i]);
-                var A000=processRecord(a000);
-                console.log(A000);
-                break;
-            case 'B100':
-                totalRecords.b100=parseInt(input[i].substr(4,15));
-                break;
-            case 'B110':
-                totalRecords.b110=parseInt(input[i].substr(4,15));
-                break;
-            case 'C100':
-                totalRecords.c100=parseInt(input[i].substr(4,15));
-                break;
-            case 'D110':
-                totalRecords.d110=parseInt(input[i].substr(4,15));
-                break;
-            case 'D120':
-                totalRecords.d120=parseInt(input[i].substr(4,15));
-                break;
-            case 'M100':
-                totalRecords.m100=parseInt(input[i].substr(4,15));
-                break;
+            case 'A000':    a000.push(input[i]);    var A000=processRecord(a000);   break;
+            case 'B100':    totalRecords.b100=parseInt(input[i].substr(4,15));      break;
+            case 'B110':    totalRecords.b110=parseInt(input[i].substr(4,15));      break;
+            case 'C100':    totalRecords.c100=parseInt(input[i].substr(4,15));      break;
+            case 'D110':    totalRecords.d110=parseInt(input[i].substr(4,15));      break;
+            case 'D120':    totalRecords.d120=parseInt(input[i].substr(4,15));      break;
+            case 'M100':    totalRecords.m100=parseInt(input[i].substr(4,15));      break;
         }
     }
-
-    exports.a100=A000;   //a100Obj;
+    exports.a100=A000;   
     exports.records=totalRecords;
     return exports;
 }
 
+function flagIn(id, title){
+    printLine(openLine() + convertCell(title) + convertCell(b100Flag) + closeLine());
+    return document.getElementById(id).checked;
+}
+
+function openLine(){
+    if(CONVERTTOEXCEL)  return '<tr>';
+    return '';
+}
+
+function closeLine(){
+    if(CONVERTTOEXCEL)  return '</tr>';
+    return '';
+}
+
+function lineBreak(){
+    if(CONVERTTOEXCEL)  return '<tr></tr>';
+    return '';
+}
+
+function convertCell(line){
+    if(CONVERTTOEXCEL)  return '<td>' + line + '</td>';
+    return line;
+}
+
+function convertLine(line){
+    if(CONVERTTOEXCEL)  return '<tr><td>' + line + '</tr></td>';
+    return line;
+}
+/*
+function convertObject(obj){
+    var str='';
+    if(CONVERTTOEXCEL){
+
+    }  
+    for(let [key,value] of Object.entries(obj)){
+        if(key!='toString' && key!='toStringTitle')     str+=convertCell(key.toString());
+    }
+    if(CONVERTTOEXCEL)  str+='</tr>';
+    return str; 
+}
+*/
+function convertArray(arr){
+    if(CONVERTTOEXCEL){
+        str='' + openLine();
+        for(let i=0;i<arr.length;i++){
+            str+=convertCell(arr[i]);
+        }
+        str+=closeLine();
+        return str;
+    }
+    return arr;
+}
+
 function run(){
-    restart();
-    var inputer=bkmvdata_input;    //document.getElementById('bkmvdata_data').value;
+    restart('ur_rejects');
+    if(CONVERTTOEXCEL)    printLine('<table border="1">');
+    var inputer=bkmvdata_input;
     var sp=inputer.split("\n");
-    var output_1=document.getElementById('output');
-    b100Flag=document.getElementById('show_b100').checked;
-    b110Flag=document.getElementById('show_b110').checked;
-    c100Flag=document.getElementById('show_c100').checked;
-    d110Flag=document.getElementById('show_d110').checked;
-    d120Flag=document.getElementById('show_d120').checked;
-    m100Flag=document.getElementById('show_m100').checked;
-    printFlag=document.getElementById('print_type').checked;
+    printFlag=flagIn('print_type','Print to screen: ');
     
-    printLine("Show B100: " + b100Flag);
-    printLine("Show B110: " + b110Flag);
-    printLine("Show C100: " + c100Flag);
-    printLine("Show D110: " + d110Flag);
-    printLine("Show D120: " + d120Flag);
-    printLine("Show M100: " + m100Flag);
-    printLine("Print to screen " + printFlag);
-    var a100=[];
-    var b100=[];
-    var b110=[];
-    var c100=[];
-    var d110=[];
-    var d120=[];
-    var m100=[];
-    var z900=[];
+    b100Flag=flagIn('show_b100','Show B100: ');
+    b110Flag=flagIn('show_b110','Show B110: ');
+    c100Flag=flagIn('show_c100','Show C100: ');
+    d110Flag=flagIn('show_d110','Show D110: ');
+    d120Flag=flagIn('show_d120','Show D120: ');
+    m100Flag=flagIn('show_m100','Show M100: ');
+    
 
+    var a100=[],b100=[],b110=[],c100=[],d110=[],d120=[],m100=[],z900=[];
     var ini=processIni();
-
-    print(true, ini.a100, 'INI Header: ');
-    print(true, ini.records, 'Records in file: ');
-
-    printLine('Total records in file:');
+    ini.toStringTitle=toStringTitle;
+    print(true, ini.a100, convertLine('INI Header: '), undefined, convertArray(variableNamesA000));
+    //print(true, ini.records, 'Records in file: ');
+    printLine(convertLine('Total records in file:'));
 
     var totalRecords={
         a100:0,
@@ -157,102 +249,43 @@ function run(){
 
     for(var i=0;i<sp.length;i++){
         let current=sp[i].substring(0,4);
-        //printLine(sp[i].substring(0,4))
         switch(current){
-            case 'A100':
-                a100.push(sp[i]);
-                totalRecords.a100++;
-                break;
-            case 'B100':
-                b100.push(sp[i]);
-                totalRecords.b100++;
-                break;
-            case 'B110':
-                b110.push(sp[i]);
-                totalRecords.b110++;
-                break;
-            case 'C100':
-                c100.push(sp[i]);
-                totalRecords.c100++;
-                break;
-            case 'D110':
-                d110.push(sp[i]);
-                totalRecords.d110++;
-                break;
-            case 'D120':
-                d120.push(sp[i]);
-                totalRecords.d120++;
-                break;
-            case 'M100':
-                m100.push(sp[i]);
-                totalRecords.m100++;
-                break;
-            case 'Z900':
-                z900.push(sp[i]);
-                totalRecords.z900++;
-                break;
+            case 'A100':    a100.push(sp[i]);   totalRecords.a100++;    break;
+            case 'B100':    b100.push(sp[i]);   totalRecords.b100++;    break;
+            case 'B110':    b110.push(sp[i]);   totalRecords.b110++;    break;
+            case 'C100':    c100.push(sp[i]);   totalRecords.c100++;    break;
+            case 'D110':    d110.push(sp[i]);   totalRecords.d110++;    break;
+            case 'D120':    d120.push(sp[i]);   totalRecords.d120++;    break;
+            case 'M100':    m100.push(sp[i]);   totalRecords.m100++;    break;
+            case 'Z900':    z900.push(sp[i]);   totalRecords.z900++;    break;
         }
     }
-
+/*
     for(let [key,value] of Object.entries(totalRecords)){
         printLine(key + ": " + value + "\t");
     }
+*/
+    for(let i=0;i<recordType.length;i++){
+        filesMatch(ini.records[recordType[i]],totalRecords[recordType[i]],recordType[i].toUpperCase());
+    }
 
-    var A100=processRecord(a100);
-    var C100=processC100(c100);
-    var D110=processRecord(d110);
-    var D120=processRecord(d120);
-    var B110=processRecord(b110);
-    var B100=processRecord(b100);
-    var M100=processRecord(m100);
-    var Z900=processRecord(z900);
-    var total_c=showTotals(C100, D110, D120, B110, B100, M100, A100, Z900);
+    var total_c=showTotals(processRecord(c100), processRecord(d110), processRecord(d120), processRecord(b110), processRecord(b100), processRecord(m100), processRecord(a100), processRecord(z900));
+    if(CONVERTTOEXCEL){
+        printLine('</table>');
 
+        document.getElementById('output_table').append(stringToHTML(output_variable));  //document.getElementById('output').value));
+        document.getElementById("save").disabled = false;
+    }        
 }
 
-function processC100(c100){
-    c100Obj.length=0;
-    for(let i=0;i<c100.length;i++){
-        c100o={};  
-        c100o.toString=generalToString;                  
-        c100o.code=c100[i].substring(0,4);
-        c100o.fileno=c100[i].substring(4,13);
-        c100o.empno=c100[i].substring(13,22);
-        c100o.doctype=c100[i].substr(22,3);
-        c100o.docnum=c100[i].substring(25,45);
-        c100o.docdate=c100[i].substring(45,53);
-        c100o.dochour=c100[i].substring(53,57);
-        c100o.customer=c100[i].substring(57,107);
-        c100o.addrstreet=c100[i].substring(107,157);
-        c100o.addrnumber=c100[i].substr(157,10);
-        c100o.addrcity=c100[i].substr(167,30);
-        c100o.addrzip=c100[i].substr(197,8);
-        c100o.addrcountry=c100[i].substr(205,30);
-        c100o.addrcountrycode=c100[i].substr(235,2);
-        c100o.phone=c100[i].substr(237,15);
-        c100o.taxnumber=c100[i].substr(252,9);
-        c100o.duedate=c100[i].substr(261,8);
-        c100o.docfxtotal=c100[i].substr(269,15);
-        c100o.currency=c100[i].substr(284,3);
-        c100o.totalbeforediscount=c100[i].substr(287,15);
-        c100o.discount=c100[i].substr(302,15);
-        c100o.totalafterdiscount=c100[i].substr(317,15);
-        c100o.vattotal=c100[i].substr(332,15);
-        c100o.grossamt=c100[i].substr(347,15);
-        c100o.entityid=c100[i].substr(374,15);
-        c100o.spaces_1=c100[i].substr(389,10);
-        c100o.spaces_2=c100[i].substr(399,1);
-        c100o.docdate_1=c100[i].substr(400,8);
-        c100o.branch=c100[i].substr(408,7);
-        c100o.user=c100[i].substr(415,9);                    
-        c100o.id=id=c100[i].substr(424,7);
-        c100o.spaces_3=c100[i].substr(431,13);
-        c100o.amountTaxDis=parseFloat(c100o.totalafterdiscount)+parseFloat(c100o.vattotal)!=parseFloat(c100o.grossamt)?true:false;
-        c100o.amountTaxDisDescription=parseFloat(c100o.totalafterdiscount)/100 + " + " + parseFloat(c100o.vattotal)/100 + " != " + parseFloat(c100o.grossamt)/100;
-        c100Obj.push(c100o);
-    }
-    //printLine(c100Obj);
-    return c100Obj;
+var stringToHTML = function (str) {
+	var parser = new DOMParser();
+	var doc = parser.parseFromString(str, 'text/html');
+	return doc.body;
+};
+
+function filesMatch(ini, bkmvdata, title){
+    ini==bkmvdata ? printLine(openLine() + convertCell(title + ' records match, ini: ') + convertCell(ini) + convertCell(' bkmvdata: ' + bkmvdata)): printLine('B100 records exception, ini: ' + ini + ' bkmvdata: ' + bkmvdata);
 }
 
 function processRecord(record){
@@ -261,7 +294,7 @@ function processRecord(record){
 
     if(type=='Z900'){
         z900Obj.length=0;
-        var variableNames=['code','fileno','empno','primaryIdentifier','SystemConst','totalRecords','space'];
+        var variableNames=variableNamesZ900;
         //var spaces=[4,9,9,15,8,15,50];
         var startPoints=[0,4,13,22,37,45,60];
 
@@ -271,7 +304,7 @@ function processRecord(record){
         return z900Obj;
     }else if(type=='A100'){
         a100Obj.length=0;
-        var variableNames=['code','fileno','empno','primaryIdentifier','SystemConst','space'];
+        var variableNames=variableNamesA100;
         var startPoints=[0,4,13,22,37,45];
 
         for(let i=0;i<record.length;i++){
@@ -280,8 +313,7 @@ function processRecord(record){
         return a100Obj;
     }else if(type=='D120'){
         d120Obj.length=0;
-        var variableNames=['code','fileno','empno','doctype','docnum','doclinenum','paymentmethod','banknumber',
-        'branchnumber','acctnumber','checknumber','paydate','amount','clearingcompany','creditcard','credittype','branchid','docdate','id','space'];
+        var variableNames=variableNamesD120;
         var startPoints=[0,4,13,22,25,45,49,50,60,70,85,95,103,118,119,139,140,147,155,162];  
         
         for(let i=0;i<record.length;i++){
@@ -290,11 +322,7 @@ function processRecord(record){
         return d120Obj;
     }else if(type=='A000'){
         a100Obj.length=0;
-        console.log('in a000');
-        var variableNames=['code','space','totalRecords','empNumber','indentifier','systemConst','softwareId','softwareName','softwareVersion','softwareOwnerId',
-                        'softwareOwnerName','softwareType','fileSaveDirectory','softwareBookkeeping','requiredAccounting','companyNumber','companyWhNumber',
-                        'space_1','companyName','address','addressNum','addressCity','zip','taxYear','startDate','endDate','dateGenerated','hourGenerated',
-                        'Language','encoding','compressSoftware','currency','branches','space_2'];
+        var variableNames=variableNamesA000;
         var startPoints=[0,4,9,24,34,48,56,64,84,104,113,133,134,184,185,186,195,204,214,264,314,324,354,362,366,374,382,390,394,395,396,416,419,420];
 
         for(let i=0;i<record.length;i++){
@@ -303,8 +331,7 @@ function processRecord(record){
         return a100Obj;
     }else if(type=='M100'){
         m100Obj.length=0;
-        var variableNames=['code','fileno','empno','itemSerial','itemVendorSerial','internalSerial','itemName','sortCode','sortCodeDescription','unitType',
-                            'itemOpenBalance','totalDebit','totalCredit','endCost','endCostA','space'];
+        var variableNames=variableNamesM100;
         var startPoints=[0,4,13,22,42,62,82,132,142,172,192,204,216,228,238,248];
 
         for(let i=0;i<record.length;i++){
@@ -313,9 +340,7 @@ function processRecord(record){
         return m100Obj;
     }else if(type=='B100'){
         b100Obj.length=0;
-        var variableNames=['code','fileno','empno','trannumber','linenumber','space_1','trantype','referencenumber','rectyoe','reference_2',
-                            'rectype_2','details','date','duedate','account','contraaccount','trandirection','currency','tranamount','tranfxamount',
-                        'quantity','space_2','space_3','space_4','datecreated','createdby','space_5'];
+        var variableNames=variableNamesB100;
         var startPoints=[0,4,13,22,32,37,45,60,80,83,103,106,156,164,172,187,202,203,206,221,236,248,258,268,275,283,292];
 
         for(let i=0;i<record.length;i++){
@@ -324,9 +349,7 @@ function processRecord(record){
         return b100Obj;
     }else if(type=='B110'){
         b110Obj.length=0;
-        var variableNames=['code','fileno','empno','acctnumber','acctname','bscode','bsdescription','clientstreet','clientno','clientcity',
-                            'clientzip','clientcountry','countrycode','summaryacct','openbalance','debit','credit','accountingcode','entitytaxid','branchid',
-                        'fxopenbalance','currency','space'];
+        var variableNames=variableNamesB110;
         var startPoints=[0,4,13,22,37,87,102,132,182,192,222,230,260,262,277,292,307,322,326,335,342,357,360];
 
         for(let i=0;i<record.length;i++){
@@ -335,8 +358,7 @@ function processRecord(record){
         return b110Obj;
     }else if(type=='D110'){
         d110Obj.length=0;
-        var variableNames=['code','fileno','empno','doctype','docnum','doclinenum','docmaintype','docmainnum','trantype','itemid','itemdescription','manufacturer',
-                            'serialnumber','unittype','quantity','rate','discount','amount','vat','branch','duedate','id','branchid','space'];
+        var variableNames=variableNamesD110;
         var startPoints=[0,4,13,22,25,45,49,52,72,73,93,123,173,203,223,240,255,270,285,289,296,304,311,318];
         let descripancy_rate=parseFloat(document.getElementById('descripancy_rate').value);
         let over_rate;
@@ -346,19 +368,34 @@ function processRecord(record){
             d110Obj.push(processLine(record[i], variableNames, startPoints, over_rate));
         }
         return d110Obj;
+    }else if(type=='C100'){
+        c100Obj.length=0;
+        var variableNames=variableNamesC100;
+        var startPoints=[0,4,13,22,25,45,53,57,107,157,167,197,205,235,237,252,261,269,284,287,302,317,332,347,374,389,399,400,408,415,424,431];
+
+        for(let i=0;i<record.length;i++){
+            c100Obj.push(processLine(record[i], variableNames, startPoints));
+        }
+        return c100Obj;
     }
 }
 
 function processLine(recordLine, variableNames, startPoints, overRate){
     tmp={}; 
-    tmp.toString=generalToString;     
+    tmp.toString=generalToString;   
+    tmp.toStringTitle=toStringTitle;  
         for(let j=0;j<variableNames.length;j++){
             let space=startPoints[j+1]-startPoints[j];
             tmp[variableNames[j]]=recordLine.substr(startPoints[j], space);
         }
-    if(tmp.code=='D110'){
-        tmp.rateQuantityDis=Math.abs(((parseFloat(tmp.rate)/100)*(parseFloat(tmp.quantity)/10000))-(parseFloat(tmp.amount)/100)-Math.abs(parseFloat(tmp.discount)/100))>overRate?true:false;   
+    if(tmp.code=='D110'){   
+        tmp.rateQuantityDis=Math.abs((Math.abs(parseFloat(tmp.rate)/100)*Math.abs(parseFloat(tmp.quantity)/10000))-Math.abs(parseFloat(tmp.amount)/100)-Math.abs(parseFloat(tmp.discount)/100))/Math.abs(parseFloat(tmp.amount)/100)>overRate?true:false;   
         tmp.rqadetail=(parseFloat(tmp.rate)/100)+ " * " + (parseFloat(tmp.quantity)/10000) + " = " + (parseFloat(tmp.amount)/100);
+    }else if(tmp.code=='C100'){
+        tmp.amountTaxDis=Math.abs(parseFloat(tmp.totalafterdiscount)+parseFloat(tmp.vattotal)-parseFloat(tmp.grossamt))>1?true:false;
+        tmp.amountTaxDisDescription=parseFloat(tmp.totalafterdiscount)/100 + " + " + parseFloat(tmp.vattotal)/100 + " != " + parseFloat(tmp.grossamt)/100;
+    }else if(tmp.code=='B100'){
+        tmp.tranTypeMissing=parseInt(tmp.trannumber)==0?true:false;
     }
     return tmp;
 }
@@ -386,6 +423,10 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
     var total=[];
     var ur_total=[{}];
     ur_total.toString=generalToString;
+    ur_total.toStringTitle=toStringTitle;
+    var urObj_result=[{}];
+    urObj_result.toString=generalToString;
+    urObj_result.toStringTitle=toStringTitle;
     var total_d110=[];
     var total_d120=[];
     var internalid=[];
@@ -401,6 +442,7 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
     for(let i=0;i<titles.length;i++){
         let ur_total_obj={};
         ur_total_obj.toString=generalToString;
+        ur_total_obj.toStringTitle=toStringTitle;
         ur_total_obj.title=titles[i];
         ur_total_obj.totalC100=0;
         ur_total_obj.totalD110=0;
@@ -408,26 +450,24 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
         ur_total_obj.discrepency=0;
         ur_total.push(ur_total_obj);
     }
-    //printLine(ur_total);
-
+    a100.toStringTitle=toStringTitle;
+    z900.toStringTitle=toStringTitle;
     //Print header and end lines
-    print(true, a100, 'A100 header line: ');
-    print(true, z900, 'Z900 summary line: ');
+    console.log(toStringTitle(a100Obj));
+    var a100Str=convertLine('A100 header line: ') + convertArray(variableNamesA100) + convertArray(a100);
+    print(true, a100Str, /*'A100 header line: '*/undefined , undefined, undefined);  //convertArray(variableNamesA100));
+    var z900Str=convertLine('Z900 header line: ') + convertArray(variableNamesZ900) + convertArray(z900);
+    print(true, z900Str);   //z900, 'Z900 summary line: ', undefined, convertArray(variableNamesZ900));
 
     //Find specific D110 line by id
     var findId=Array.from((',' + document.getElementById('show_ids').value).split(','));
-    //var findId=23030;
-    //printLine(findId);
         for(let i=0;i<d110.length;i++){
             if(findId.indexOf(parseInt(d110[i].id).toString())>0){
                 print(true, d110[i], 'Record requested: ');
-                //printLine+=d110[i];
             }               
         }
     
-        //printLine+=d110[12];
     var docLen=c100.length>d110.length ? c100.length : (d110.length>d120.length ? d110.length : d120.length);
-    //printLine(docLen);
 
     for(let i=0;i<docLen;i++){
         for(let j=0;j<ur_total.length;j++){
@@ -435,7 +475,6 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
                 let type_1=c100[i].doctype;
                 if(type_1==ur_total[j].title){
                     ur_total[j].totalC100+=parseFloat(c100[i].totalbeforediscount)/100;
-                    //printLine(ur_total[j].totalC100)
                 }
             }  
             if(d110.length>i){
@@ -461,15 +500,15 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
         }
     }
 
-    print(true, ur_total, 'Summary totals:');
+    //print(true, ur_total, 'Summary totals:', undefined, convertArray(['Code','C100','D110','D120','Difference','Tolerance']));
 
     //Show report records based on flags
-    print(b100Flag, b100, 'B100 Records: ');
-    print(b110Flag, b110, 'B110 Records: ');
-    print(c100Flag, c100, 'C100 Records: ');
-    print(d110Flag, d110, 'D110 Records: ');
-    print(d120Flag, d120, 'D120 Records: ');
-    print(m100Flag, m100, 'M100 Records: ');
+    print(b100Flag, convertLine('B100 Records: ') + convertArray(variableNamesB100) + b100.toString());    //b100, 'B100 Records: ', undefined, convertArray(variableNamesB100));
+    print(b110Flag, convertLine('B110 Records: ') + convertArray(variableNamesB110) + b110.toString());     //b110, 'B110 Records: ', undefined, convertArray(variableNamesB110));
+    print(c100Flag, convertLine('C100 Records: ') + convertArray(variableNamesC100) + c100.toString());     //c100, 'C100 Records: ', undefined, convertArray(variableNamesC100));
+    print(d110Flag, convertLine('D110 Records: ') + convertArray(variableNamesD110) + d110.toString());     //d110, 'D110 Records: ', undefined, convertArray(variableNamesD110));
+    print(d120Flag, convertLine('D120 Records: ') + convertArray(variableNamesD120) + d120.toString());     //, 'D120 Records: ', undefined, convertArray(variableNamesD120));
+    print(m100Flag, convertLine('M100 Records: ') + convertArray(variableNamesM100) + m100.toString());     //m100, 'M100 Records: ', undefined, convertArray(variableNamesM100));
 
     //Analyze report dicrepencies
     
@@ -494,11 +533,13 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
     var ur_internalid_arr=Array.from(ur_internalid);
     var urObj=[{}];
     urObj.toString=generalToString;
+    urObj.toStringTitle=toStringTitle;
 
     try{
         for(let i=0;i<ur_internalid_arr.length;i++){
         let ur_Obj={};
         ur_Obj.toString=generalToString;
+        ur_Obj.toStringTitle=toStringTitle;
         ur_Obj.c100Amount=0;
         ur_Obj.d110Amount=0;
         ur_Obj.d120Amount=0;
@@ -510,7 +551,6 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
             if(parseInt(c100[j].id)==parseInt(ur_internalid_arr[i])){
                 ur_Obj.c100Amount+=parseFloat(c100[j].totalbeforediscount)/100;
                 ur_Obj.c100Num++;
-                ///ur_Obj.docType=titleConvert[c100[i].doctype];
                 typeof(titleConvert[c100[j].doctype])!=undefined?ur_Obj.docType=titleConvert[c100[j].doctype]:ur_Obj.docType=undefined;
             }
         }
@@ -520,7 +560,6 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
                 ur_Obj.d110Num++;
                 ur_Obj.d110rateQuantityDis=d110[j].rateQuantityDis;
                 ur_Obj.d110rqadetail=d110[j].rqadetail;
-                //ur_Obj.docType=titleConvert[d110[i].doctype];
                 typeof(titleConvert[d110[j].doctype])!=undefined?ur_Obj.docType=titleConvert[d110[j].doctype]:ur_Obj.docType=undefined;
             }
         }
@@ -528,7 +567,6 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
             if(parseInt(d120[j].id)==parseInt(ur_internalid_arr[i])){
                 ur_Obj.d120Amount+=parseFloat(d120[j].amount)/100;
                 ur_Obj.d120Num++;
-                //ur_Obj.docType=titleConvert[d120[i].doctype];
                 typeof(titleConvert[d120[j].doctype])!=undefined?ur_Obj.docType=titleConvert[d120[j].doctype]:ur_Obj.docType=undefined;
             }
         }
@@ -541,71 +579,94 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
     }
 
     //Show summary discrepencies C100 D110 and D120
-    var urObj_result=[{}];
-    urObj_result.toString=generalToString;
-
+    var SummaryErrorStr=lineBreak() + convertLine('Transactions with discrepency between D110 and C100: ' + urObj_result.length);
+    SummaryErrorStr+='' + lineBreak() + convertArray(['C100 Amount', 'D110 Amount', 'D120 Amount', 'ID','C100 Lines', 'D110 Lines', 'D120 Lines', 'Type', 'Exception Status', 'Error Line']);
     for(let i=1;i<urObj.length;i++){
         let c=urObj[i].c100Amount;
         let d1=urObj[i].d110Amount;
         let d2=urObj[i].d120Amount;
         if(Math.abs(c-d1-d2)>5 && c!=d1 && c!=d2){
             urObj_result.push(urObj[i]);
-            //printLine(urObj[i]);
+            SummaryErrorStr+=openLine() + convertCell(urObj[i].c100Amount) + convertCell(urObj[i].d110Amount) + convertCell(urObj[i].d120Amount);
+            SummaryErrorStr+=convertCell(urObj[i].internalid) + convertCell(urObj[i].c100Num) + convertCell(urObj[i].d110Num) + convertCell(urObj[i].d120Num);
+            SummaryErrorStr+=convertCell(urObj[i].docType) + convertCell(urObj[i].exceptionC100) + convertCell(urObj[i].exceptionD110) + closeLine();
         }
     }
-
-
     let element=document.getElementById('summary_error');
-
-    print(true, urObj_result, 'Transactions with discrepency between D110 and C100:', element);
-    
-    //Restart results object
+    let D110Array=['C100 Amount', 'D110 Amount', 'D120 Amount', 'ID','C100 Lines', 'D110 Lines', 'D120 Lines', 'Type', 'Exception Status', 'Error Line'];
+    print(true, SummaryErrorStr /*urObj_result*/, /*lineBreak() + 'Transactions with discrepency between D110 and C100: ' + urObj_result.length*/'1', element); //, convertArray(D110Array));
     urObj_result.length=0;
 
     //Show D110 lines without C100
+    var D110noC100Str=lineBreak() + convertLine('D110/D120 without C100: ' + urObj_result.length);
+    D110noC100Str+= lineBreak() + convertArray(['Id','Type']);
     for(let i=1;i<urObj.length;i++){
-        if(urObj[i].exceptionC100)  urObj_result.push(urObj[i]);
+        if(urObj[i].exceptionC100){
+            D110noC100Str+=openLine() + convertCell(urObj[i].id) + convertCell(urObj[i].type) + closeLine();
+            urObj_result.push(urObj[i]);
+        }  
     }
-
-   element=document.getElementById('d110_no_c100_error');
-    print(true, urObj_result, 'D110/D120 without C100:',element);
-
+    element=document.getElementById('d110_no_c100_error');
+    print(true, D110noC100Str /*urObj_result*/, /*lineBreak() + 'D110/D120 without C100: ' + urObj_result.length*/'1',element);
     urObj_result.length=0;
 
     //Show C100 lines without D110
+    var C100noD110Str=lineBreak() + convertLine('C100 without D110: ' + urObj_result.length);
+    C100noD110Str+= lineBreak() + convertArray(['Id','Type']);
     for(let i=1;i<urObj.length;i++){
-        if(urObj[i].exceptionD110)  urObj_result.push(urObj[i]);
+        if(urObj[i].exceptionD110){
+            C100noD110Str+=openLine() + convertCell(urObj[i].id) + convertCell(urObj[i].type) + closeLine();
+            urObj_result.push(urObj[i]);
+        }  
     }
-
     element=document.getElementById('c100_no_d110_error');
-    print(true, urObj_result, 'C100 without D110:', element);
-
+    print(true, C100noD110Str /*urObj_result*/, /*lineBreak() + 'C100 without D110: ' + urObj_result.length*/'1', element);
     urObj_result.length=0;
 
     //Show D110 with rate*quantity !=Amount
+    var D110Str=lineBreak() + convertLine('D110 Discrepancy between Rate*Quantity to Amount: ' + urObj_result.length);
+    D110Str+= lineBreak() + convertArray(['Id','Exception Detail','Discount','Type','Calculation','Difference','Tolerance']);
     for(let i=1;i<d110.length;i++){
         if(d110[i].rateQuantityDis){
             let tmp={};
+            D110Str+=openLine() + convertCell(parseInt(d110[i].id));
+            D110Str+=convertCell(d110[i].rqadetail);
+            D110Str+=convertCell(parseFloat(d110[i].discount)/100);
+            D110Str+=convertCell(titleConvert[d110[i].doctype]);
+            D110Str+=convertCell((parseFloat(d110[i].rate)/100)*(parseFloat(d110[i].quantity)/10000));
+            let diff=Math.abs(parseFloat(d110[i].amount)/100)-Math.abs(tmp.calculation);
+            D110Str+=convertCell(diff);
+            D110Str+=convertCell(diff/(parseFloat(d110[i].amount)/100)*100 + '%') + closeLine();
+
             tmp.id=parseInt(d110[i].id);
             tmp.detail=d110[i].rqadetail;
             tmp.discount=parseFloat(d110[i].discount)/100;
             tmp.type=titleConvert[d110[i].doctype];   
             tmp.calculation=(parseFloat(d110[i].rate)/100)*(parseFloat(d110[i].quantity)/10000);
-            tmp.difference=Math.abs((parseFloat(d110[i].amount)/100)-tmp.calculation);    
+            tmp.difference=Math.abs(parseFloat(d110[i].amount)/100)-Math.abs(tmp.calculation);    
             tmp.tolerance=(tmp.difference/(parseFloat(d110[i].amount)/100))*100 + '%';
             urObj_result.push(tmp);
         }  
     }
-
+    //D110Str+=closeLine();
     element=document.getElementById('rate_quantity_error');
-    print(true, urObj_result, 'D110 Discrepancy between Rate*Quantity to Amount:', element);
-
+    print(true, D110Str /*urObj_result*/, /*lineBreak() + 'D110 Discrepancy between Rate*Quantity to Amount: ' + urObj_result.length*/'1', element);
     urObj_result.length=0;
 
     //Show C100 where amount + vat does not equal to gross amount
+    var C100VATStr=lineBreak() + convertLine('C100 where amount + vat does not equal gross amount: ' + urObj_result.length);
+    C100VATStr+= lineBreak() + convertArray(['Id','Exception Detail','Amount','VAT','Gross Amount','Type']);
     for(let i=1;i<c100.length;i++){
         if(c100[i].amountTaxDis){
             let tmp={};
+            C100VATStr+=openLine() + convertCell(parseInt(c100[i].id));
+            C100VATStr+=convertCell(c100[i].amountTaxDisDescription);
+            C100VATStr+=convertCell(parseFloat(c100[i].totalafterdiscount)/100);
+            C100VATStr+=convertCell(parseFloat(c100[i].vattotal)/100);
+            C100VATStr+=convertCell(parseFloat(c100[i].grossamt)/100);
+            C100VATStr+=convertCell(titleConvert[d110[i].doctype]) + closeLine();
+
+
             tmp.id=parseInt(c100[i].id);
             tmp.detail=c100[i].amountTaxDisDescription;
             tmp.amount=parseFloat(c100[i].totalafterdiscount)/100;
@@ -615,40 +676,81 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
             urObj_result.push(tmp);
         }  
     }
-
+    //C100VATStr+=closeLine();
     element=document.getElementById('grossamt_error');
-    print(true, urObj_result, 'C100 where amount + vat does not equal gross amount:', element);
+    print(true, C100VATStr /*urObj_result*/,/* lineBreak() + 'C100 where amount + vat does not equal gross amount: ' + urObj_result.length*/'1', element);
 
-    //Show if C100 lines are negative
+    //Show if B100 transaction sare missing tran number
+    urObj_result.length=0;
+    var B100Str=lineBreak() + convertLine('B100 transactions missing tran number: ' + urObj_result.length);
+    B100Str+= lineBreak() + convertArray(['Reference','Transaction Number']);
+    for(let i=1;i<b100.length;i++){
+        if(b100[i].tranTypeMissing){
+            let tmp={};
+            B100Str+=openLine() + convertCell(parseInt(b100[i].referencenumber));
+            B100Str+=convertCell(b100[i].trannumber) + closeLine();
+
+            tmp.referencenumber=parseInt(b100[i].referencenumber);
+            tmp.tranNum=b100[i].trannumber;
+            urObj_result.push(tmp);
+        }  
+    }
+    element=document.getElementById('tran_number_error');
+    print(true, B100Str /*urObj_result*/, /*lineBreak() + 'B100 transactions missing tran number: ' + urObj_result.length*/'1', element, convertArray(['reference','transaction']));
+
     urObj_result.length=0;
 
+    //Show if C100 lines are negative
+    var C100NegStr=lineBreak() + convertLine('C100 where amount is negative: ' + urObj_result.length);
+    C100NegStr+= lineBreak() + convertArray(['ID','Amount','Type']);
     for(let i=1;i<c100.length;i++){
         if(parseFloat(c100[i].amountTaxDis)<0){
             let tmp={};
+            C100NegStr+=openLine() + convertCell(parseInt(c100[i].id));
+            C100NegStr+=convertCell(parseFloat(c100[i].totalafterdiscount)/100);
+            C100NegStr+=convertCell(titleConvert[d110[i].doctype]) + closeLine();
+
             tmp.id=parseInt(c100[i].id);
             tmp.amount=parseFloat(c100[i].totalafterdiscount)/100;
             tmp.type=titleConvert[d110[i].doctype];   
             urObj_result.push(tmp);
         }  
     }
-
-    print(true, urObj_result, 'C100 where amount is negative:', element);
-
+    print(true, C100NegStr /*urObj_result*/, /*lineBreak() + 'C100 where amount is negative: ' + urObj_result.length*/'1', element);
     return total;
 }
 
-function print(flag, record, name, _e){
+function print(flag, record, name, _e, title){
     if(flag){
-        printLine(name);
+        //printLine(convertLine(name));
+        //if(typeof(title)!='undefined')  printLine(convertLine(title));
         printLine(record);
         if(record.length>0 && _e)    _e.checked=true;
     }    
 }
-
+/*
 function printLine(line){
-    if(printFlag)   document.getElementById('output').value+=line.toString() + '\n';
+    if(printFlag)   document.getElementById('output').value+=line.toString() + '\n'; 
     else typeof(line)=='string' ? console.log(line) : console.table(line);
 }
+*/
+
+function printLine(line){
+    if(printFlag){
+        /*if(typeof(line)=='string'){
+            document.getElementById('output').value+=line.toString() + '\n';
+        }else{
+            //document.getElementById('output').value+=line.toString() + '\n';
+            for(let i=0;i<line.length;i++){
+                document.getElementById('output').value+=line[i].toString() + '\n';
+            }           
+        }*/
+        //document.getElementById('output').value+=line.toString() + '\n';
+        output_variable+=line.toString() + '\n';
+    }   
+    else typeof(line)=='string' ? console.log(line) : console.table(line);
+}
+
 
             </script>
     </head>
@@ -671,26 +773,26 @@ function printLine(line){
         </table>
         
         
-        <button id='runner' onclick="loadFile()">Analyze</button><br /><br />        
+        <button id='runner' onclick="loadFile()">Analyze</button>&numsp;<button id='reset' onclick="reset()">Reset</button>&numsp;<button id='save' onclick="exportToCsv()">Save</button><br /><br />        
         <table>
             <tr>
                 <td>
                     <label><b>Advanced Settings</b></label><br /><br />
-                    <input type='checkbox' id='show_b100'><label for='show_b100'>Show B100 Records</label><br />
-                    <input type='checkbox' id='show_b110'><label for='show_b110'>Show B110 Records</label><br />
-                    <input type='checkbox' id='show_c100'><label for='show_c100'>Show C100 Records</label><br />
-                    <input type='checkbox' id='show_d110'><label for='show_d110'>Show D110 Records</label><br />
-                    <input type='checkbox' id='show_d120'><label for='show_d120'>Show D120 Records</label><br />
-                    <input type='checkbox' id='show_m100'><label for='show_m100'>Show M100 Records</label><br /> 
-                    <input type='checkbox' id='print_type'><label for='print_type'>Print to screen</label><br />
+                    <input type='checkbox' id='show_b100' class='ur_feature'><label for='show_b100'>Show B100 Records</label><br />
+                    <input type='checkbox' id='show_b110' class='ur_feature'><label for='show_b110'>Show B110 Records</label><br />
+                    <input type='checkbox' id='show_c100' class='ur_feature'><label for='show_c100'>Show C100 Records</label><br />
+                    <input type='checkbox' id='show_d110' class='ur_feature'><label for='show_d110'>Show D110 Records</label><br />
+                    <input type='checkbox' id='show_d120' class='ur_feature'><label for='show_d120'>Show D120 Records</label><br />
+                    <input type='checkbox' id='show_m100' class='ur_feature'><label for='show_m100'>Show M100 Records</label><br /> 
+                    <input type='checkbox' id='print_type' class='ur_feature' checked='true'><label for='print_type'>Print to screen</label><br />
                     <table>
                         <tr>
                             <td>
-                                <label for='descripancy_rate'>Descripancy Rate (rate*quantity=amount)</label><br />
+                                <label for='descripancy_rate'>Descripancy Rate % (rate*quantity=amount)</label><br />
                                 <label for='show_ids'>Show Specific Records(,)</label>
                             </td>
                             <td>
-                                <input type='text' id='descripancy_rate' value='20'><br />
+                                <input type='text' id='descripancy_rate' value='1'><br />
                                 <input type='text' id='show_ids'>
                             </td>
                         </tr>
@@ -699,15 +801,20 @@ function printLine(line){
                 </td>
                 <td style='vertical-align:top;'>
                     <label><b>Errors Detected</b></label><br /><br />
-                    <input type='checkbox' id='summary_error' disabled><label for='summary_error'>Summary Error</label><br />
-                    <input type='checkbox' id='d110_no_c100_error' disabled><label for='d110_no_c100_error'>D110 with no C100 Error</label><br />
-                    <input type='checkbox' id='c100_no_d110_error' disabled><label for='c100_no_d110_error'>C100 with no D110 Error</label><br />
-                    <input type='checkbox' id='rate_quantity_error' disabled><label for='rate_quantity_error'>R*Q=A Error</label><br />
-                    <input type='checkbox' id='grossamt_error' disabled><label for='grossamt_error'>Amount VAT Error</label><br />
+                    <input type='checkbox' id='summary_error' class='ur_rejects' disabled><label for='summary_error'>Summary Error</label><br />
+                    <input type='checkbox' id='d110_no_c100_error' class='ur_rejects' disabled><label for='d110_no_c100_error'>D110 with no C100 Error</label><br />
+                    <input type='checkbox' id='c100_no_d110_error' class='ur_rejects' disabled><label for='c100_no_d110_error'>C100 with no D110 Error</label><br />
+                    <input type='checkbox' id='rate_quantity_error' class='ur_rejects' disabled><label for='rate_quantity_error'>R*Q=A Error</label><br />
+                    <input type='checkbox' id='grossamt_error' class='ur_rejects' disabled><label for='grossamt_error'>Amount VAT Error</label><br />
+                    <input type='checkbox' id='tran_number_error' class='ur_rejects' disabled><label for='tran_number_error'>B100 TranNo missing</label><br />
                 </td>
             </tr>
         </table>
         <br /><br /> 
+        <!--
         <textarea id='output' rows="15" cols="65"></textarea><br /><br />
+        -->
+        <div id="hidden_box" style="display:none"></div>
+        <div id='output_table'></div>
     </body>
 </html>
