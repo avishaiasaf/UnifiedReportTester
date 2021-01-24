@@ -2,6 +2,10 @@
     <head>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
         <script>
+            /*
+            *   Authour: Avishai Asaf
+            *   Jan 2021
+            */
         document.addEventListener("DOMContentLoaded", function(event) {
             saveDisable();
         });
@@ -202,11 +206,17 @@ function convertObject(obj){
     return str; 
 }
 */
+
+function boldCell(cell){
+    if(CONVERTTOEXCEL)  return '<b>' + cell + '</b>';
+    return  cell;
+}
+
 function convertArray(arr){
     if(CONVERTTOEXCEL){
         str='' + openLine();
         for(let i=0;i<arr.length;i++){
-            str+=convertCell(arr[i]);
+            str+=convertCell(boldCell(arr[i]));
         }
         str+=closeLine();
         return str;
@@ -271,8 +281,12 @@ function run(){
 
     var total_c=showTotals(processRecord(c100), processRecord(d110), processRecord(d120), processRecord(b110), processRecord(b100), processRecord(m100), processRecord(a100), processRecord(z900));
     if(CONVERTTOEXCEL){
+        printLine(convertLine('© Avishai Asaf'));
         printLine('</table>');
-
+       /* let startTable=output_variable.indexOf('<table>');
+        let endTable=output_variable.indexOf('</table>');
+        if(startTable>0)     output_variable=output_variable.slice(startTable);
+        if(endTable<output_variable.length-1)     output_variable=output_variable.slice(0,endTable);*/
         document.getElementById('output_table').append(stringToHTML(output_variable));  //document.getElementById('output').value));
         document.getElementById("save").disabled = false;
     }        
@@ -500,7 +514,13 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
         }
     }
 
-    //print(true, ur_total, 'Summary totals:', undefined, convertArray(['Code','C100','D110','D120','Difference','Tolerance']));
+    //Show report totals
+    var summaryTotalsStr=lineBreak() + convertLine('Summary Totals: ') + lineBreak() + convertArray(['C100 Amount', 'D110 Amount', 'D120 Amount', 'Descripancy','Descripancy Rate']);
+    for(let i=0;i<ur_total.length;i++){
+        summaryTotalsStr+=openLine() + convertCell(ur_total[i]['totalC100']) + convertCell(ur_total[i]['totalD110']) + convertCell(ur_total[i]['totalD120']);
+        summaryTotalsStr+=convertCell(ur_total[i]['discrepency']) + convertCell(ur_total[i]['discrepencyRate']) + closeLine();
+    }
+    print(true, summaryTotalsStr);  //ur_total, 'Summary totals:', undefined, convertArray(['Code','C100','D110','D120','Difference','Tolerance']));
 
     //Show report records based on flags
     print(b100Flag, convertLine('B100 Records: ') + convertArray(variableNamesB100) + b100.toString());    //b100, 'B100 Records: ', undefined, convertArray(variableNamesB100));
@@ -508,8 +528,8 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
     print(c100Flag, convertLine('C100 Records: ') + convertArray(variableNamesC100) + c100.toString());     //c100, 'C100 Records: ', undefined, convertArray(variableNamesC100));
     print(d110Flag, convertLine('D110 Records: ') + convertArray(variableNamesD110) + d110.toString());     //d110, 'D110 Records: ', undefined, convertArray(variableNamesD110));
     print(d120Flag, convertLine('D120 Records: ') + convertArray(variableNamesD120) + d120.toString());     //, 'D120 Records: ', undefined, convertArray(variableNamesD120));
-    print(m100Flag, convertLine('M100 Records: ') + convertArray(variableNamesM100) + m100.toString());     //m100, 'M100 Records: ', undefined, convertArray(variableNamesM100));
-
+    typeof(m100)!='undefined' && print(m100Flag, convertLine('M100 Records: ') + convertArray(variableNamesM100) + m100.toString());     //m100, 'M100 Records: ', undefined, convertArray(variableNamesM100));
+    
     //Analyze report dicrepencies
     
     for(let i=0;i<d120.length;i++){
@@ -590,8 +610,9 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
             SummaryErrorStr+=openLine() + convertCell(urObj[i].c100Amount) + convertCell(urObj[i].d110Amount) + convertCell(urObj[i].d120Amount);
             SummaryErrorStr+=convertCell(urObj[i].internalid) + convertCell(urObj[i].c100Num) + convertCell(urObj[i].d110Num) + convertCell(urObj[i].d120Num);
             SummaryErrorStr+=convertCell(urObj[i].docType) + convertCell(urObj[i].exceptionC100) + convertCell(urObj[i].exceptionD110) + closeLine();
-        }
+        }     
     }
+    urObj_result.length>0   && checkElement('summary_error');
     let element=document.getElementById('summary_error');
     let D110Array=['C100 Amount', 'D110 Amount', 'D120 Amount', 'ID','C100 Lines', 'D110 Lines', 'D120 Lines', 'Type', 'Exception Status', 'Error Line'];
     print(true, SummaryErrorStr /*urObj_result*/, /*lineBreak() + 'Transactions with discrepency between D110 and C100: ' + urObj_result.length*/'1', element); //, convertArray(D110Array));
@@ -604,8 +625,9 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
         if(urObj[i].exceptionC100){
             D110noC100Str+=openLine() + convertCell(urObj[i].id) + convertCell(urObj[i].type) + closeLine();
             urObj_result.push(urObj[i]);
-        }  
+        }       
     }
+    urObj_result.length>0   && checkElement('d110_no_c100_error');
     element=document.getElementById('d110_no_c100_error');
     print(true, D110noC100Str /*urObj_result*/, /*lineBreak() + 'D110/D120 without C100: ' + urObj_result.length*/'1',element);
     urObj_result.length=0;
@@ -617,8 +639,9 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
         if(urObj[i].exceptionD110){
             C100noD110Str+=openLine() + convertCell(urObj[i].id) + convertCell(urObj[i].type) + closeLine();
             urObj_result.push(urObj[i]);
-        }  
+        }          
     }
+    urObj_result.length>0   && checkElement('c100_no_d110_error');
     element=document.getElementById('c100_no_d110_error');
     print(true, C100noD110Str /*urObj_result*/, /*lineBreak() + 'C100 without D110: ' + urObj_result.length*/'1', element);
     urObj_result.length=0;
@@ -646,8 +669,9 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
             tmp.difference=Math.abs(parseFloat(d110[i].amount)/100)-Math.abs(tmp.calculation);    
             tmp.tolerance=(tmp.difference/(parseFloat(d110[i].amount)/100))*100 + '%';
             urObj_result.push(tmp);
-        }  
+        }         
     }
+    urObj_result.length>0   && checkElement('rate_quantity_error');
     //D110Str+=closeLine();
     element=document.getElementById('rate_quantity_error');
     print(true, D110Str /*urObj_result*/, /*lineBreak() + 'D110 Discrepancy between Rate*Quantity to Amount: ' + urObj_result.length*/'1', element);
@@ -674,8 +698,9 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
             tmp.grossamt=parseFloat(c100[i].grossamt)/100;
             tmp.type=titleConvert[d110[i].doctype];   
             urObj_result.push(tmp);
-        }  
+        }         
     }
+    urObj_result.length>0   && checkElement('grossamt_error');
     //C100VATStr+=closeLine();
     element=document.getElementById('grossamt_error');
     print(true, C100VATStr /*urObj_result*/,/* lineBreak() + 'C100 where amount + vat does not equal gross amount: ' + urObj_result.length*/'1', element);
@@ -693,8 +718,9 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
             tmp.referencenumber=parseInt(b100[i].referencenumber);
             tmp.tranNum=b100[i].trannumber;
             urObj_result.push(tmp);
-        }  
+        }     
     }
+    urObj_result.length>0   && checkElement('tran_number_error');
     element=document.getElementById('tran_number_error');
     print(true, B100Str /*urObj_result*/, /*lineBreak() + 'B100 transactions missing tran number: ' + urObj_result.length*/'1', element, convertArray(['reference','transaction']));
 
@@ -725,7 +751,7 @@ function print(flag, record, name, _e, title){
         //printLine(convertLine(name));
         //if(typeof(title)!='undefined')  printLine(convertLine(title));
         printLine(record);
-        if(record.length>0 && _e)    _e.checked=true;
+        //if(record.length>0 && _e)    _e.checked=true;
     }    
 }
 /*
@@ -749,6 +775,10 @@ function printLine(line){
         output_variable+=line.toString() + '\n';
     }   
     else typeof(line)=='string' ? console.log(line) : console.table(line);
+}
+
+function checkElement(element){
+    document.getElementById(element).checked=true;
 }
 
 
