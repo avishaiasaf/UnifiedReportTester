@@ -18,7 +18,7 @@ var c100Flag=false;
 var d110Flag=false;
 var d120Flag=false;
 var m100Flag=false;
-var printFlag=false;
+var printFlag=true; //Always print the HTML table
 var bkmvdata_input='';
 var ini_input='';
 var output_variable='';
@@ -165,7 +165,7 @@ function processIni(){
 }
 
 function flagIn(id, title){
-    printLine(openLine() + convertCell(title) + convertCell(b100Flag) + closeLine());
+    //printLine(openLine() + convertCell(title) + convertCell(b100Flag) + closeLine());
     return document.getElementById(id).checked;
 }
 
@@ -184,13 +184,19 @@ function lineBreak(){
     return '';
 }
 
-function convertCell(line){
-    if(CONVERTTOEXCEL)  return '<td>' + line + '</td>';
+function convertCell(line, e){
+    if(CONVERTTOEXCEL){
+        if(typeof(e)!='undefined')   return '<td style="color:red;">' + line + '</td>';
+        return '<td>' + line + '</td>';
+    }  
     return line;
 }
 
 function convertLine(line){
-    if(CONVERTTOEXCEL)  return '<tr><td>' + line + '</tr></td>';
+    if(CONVERTTOEXCEL){
+        if(typeof(e)!='undefined')   return '<tr><td style="color:red;">' + line + '</tr></td>';
+        return '<tr><td>' + line + '</tr></td>';
+    }  
     return line;
 }
 /*
@@ -229,7 +235,7 @@ function run(){
     if(CONVERTTOEXCEL)    printLine('<table border="1">');
     var inputer=bkmvdata_input;
     var sp=inputer.split("\n");
-    printFlag=flagIn('print_type','Print to screen: ');
+    //printFlag=flagIn('print_type','Print to screen: ');
     
     b100Flag=flagIn('show_b100','Show B100: ');
     b110Flag=flagIn('show_b110','Show B110: ');
@@ -242,7 +248,8 @@ function run(){
     var a100=[],b100=[],b110=[],c100=[],d110=[],d120=[],m100=[],z900=[];
     var ini=processIni();
     ini.toStringTitle=toStringTitle;
-    print(true, ini.a100, convertLine('INI Header: '), undefined, convertArray(variableNamesA000));
+    //print(true, ini.a100, convertLine('INI Header: '), undefined, convertArray(variableNamesA000));
+    print(true, convertLine('INI Header: ') + convertArray(variableNamesA000) + ini.a100.toString());
     //print(true, ini.records, 'Records in file: ');
     printLine(convertLine('Total records in file:'));
 
@@ -299,7 +306,9 @@ var stringToHTML = function (str) {
 };
 
 function filesMatch(ini, bkmvdata, title){
-    ini==bkmvdata ? printLine(openLine() + convertCell(title + ' records match, ini: ') + convertCell(ini) + convertCell(' bkmvdata: ' + bkmvdata)): printLine('B100 records exception, ini: ' + ini + ' bkmvdata: ' + bkmvdata);
+    ini==bkmvdata ? 
+    printLine(openLine() + convertCell(title + ' records match') + convertCell('INI') + convertCell(ini) + convertCell('BKMVDATA') + convertCell(bkmvdata)): 
+    printLine(openLine() + convertCell(title + ' records exception') + convertCell('INI') + convertCell(ini) + convertCell('BKMVDATA') + convertCell(bkmvdata));
 }
 
 function processRecord(record){
@@ -515,9 +524,9 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
     }
 
     //Show report totals
-    var summaryTotalsStr=lineBreak() + convertLine('Summary Totals: ') + lineBreak() + convertArray(['C100 Amount', 'D110 Amount', 'D120 Amount', 'Descripancy','Descripancy Rate']);
-    for(let i=0;i<ur_total.length;i++){
-        summaryTotalsStr+=openLine() + convertCell(ur_total[i]['totalC100']) + convertCell(ur_total[i]['totalD110']) + convertCell(ur_total[i]['totalD120']);
+    var summaryTotalsStr=lineBreak() + convertLine('Summary Totals: ') + lineBreak() + convertArray(['Section','C100 Amount', 'D110 Amount', 'D120 Amount', 'Descripancy','Descripancy Rate']);
+    for(let i=1;i<ur_total.length;i++){
+        summaryTotalsStr+=openLine() + convertCell(ur_total[i]['title']) + convertCell(ur_total[i]['totalC100']) + convertCell(ur_total[i]['totalD110']) + convertCell(ur_total[i]['totalD120']);
         summaryTotalsStr+=convertCell(ur_total[i]['discrepency']) + convertCell(ur_total[i]['discrepencyRate']) + closeLine();
     }
     print(true, summaryTotalsStr);  //ur_total, 'Summary totals:', undefined, convertArray(['Code','C100','D110','D120','Difference','Tolerance']));
@@ -599,7 +608,7 @@ function showTotals(c100, d110, d120, b110, b100, m100, a100, z900){
     }
 
     //Show summary discrepencies C100 D110 and D120
-    var SummaryErrorStr=lineBreak() + convertLine('Transactions with discrepency between D110 and C100: ' + urObj_result.length);
+    var SummaryErrorStr=lineBreak() + convertLine('Transactions with discrepency between D110 and C100: ' + urObj_result.length, true);
     SummaryErrorStr+='' + lineBreak() + convertArray(['C100 Amount', 'D110 Amount', 'D120 Amount', 'ID','C100 Lines', 'D110 Lines', 'D120 Lines', 'Type', 'Exception Status', 'Error Line']);
     for(let i=1;i<urObj.length;i++){
         let c=urObj[i].c100Amount;
@@ -806,7 +815,7 @@ function checkElement(element){
         <button id='runner' onclick="loadFile()">Analyze</button>&numsp;<button id='reset' onclick="reset()">Reset</button>&numsp;<button id='save' onclick="exportToCsv()">Save</button><br /><br />        
         <table>
             <tr>
-                <td>
+                <td> 
                     <label><b>Advanced Settings</b></label><br /><br />
                     <input type='checkbox' id='show_b100' class='ur_feature'><label for='show_b100'>Show B100 Records</label><br />
                     <input type='checkbox' id='show_b110' class='ur_feature'><label for='show_b110'>Show B110 Records</label><br />
@@ -814,7 +823,7 @@ function checkElement(element){
                     <input type='checkbox' id='show_d110' class='ur_feature'><label for='show_d110'>Show D110 Records</label><br />
                     <input type='checkbox' id='show_d120' class='ur_feature'><label for='show_d120'>Show D120 Records</label><br />
                     <input type='checkbox' id='show_m100' class='ur_feature'><label for='show_m100'>Show M100 Records</label><br /> 
-                    <input type='checkbox' id='print_type' class='ur_feature' checked='true'><label for='print_type'>Print to screen</label><br />
+                    <!--<input type='checkbox' id='print_type' class='ur_feature' checked='true'><label for='print_type'>Print to screen</label><br />-->
                     <table>
                         <tr>
                             <td>
